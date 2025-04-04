@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom colors for our Indian classical music theme
+				raga: {
+					primary: "#D4AF37", // Gold
+					secondary: "#107869", // Teal
+					accent: "#B22222", // Deep red
+					light: "#F5EFE0", // Light cream
+					dark: "#2D2926" // Dark charcoal
 				}
 			},
 			borderRadius: {
@@ -84,11 +93,24 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-subtle': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.8' }
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-5px)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-subtle': 'pulse-subtle 3s ease-in-out infinite',
+				'float': 'float 5s ease-in-out infinite'
+			},
+			backgroundImage: {
+				'mandala-pattern': "url('/mandala-pattern.svg')"
 			}
 		}
 	},
