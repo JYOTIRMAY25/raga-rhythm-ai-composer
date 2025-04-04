@@ -7,6 +7,10 @@ export interface Raga {
   mood: string;
   description: string;
   notes: string[]; // Aroha (ascending scale) and Avaroha (descending scale)
+  scale?: {
+    aroha: string[]; // Ascending scale
+    avaroha: string[]; // Descending scale
+  };
 }
 
 // Tala (rhythmic pattern)
@@ -55,4 +59,11 @@ export interface CompositionSettings {
   tempo: number;
   duration: number;
   creativity: number;
+}
+
+// Added for better organization
+export interface RagaCategory {
+  name: string;
+  description: string;
+  ragas: Raga[];
 }

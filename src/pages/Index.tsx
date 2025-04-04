@@ -31,14 +31,14 @@ const Index = () => {
   const isLoadingMusic = isLoadingRagas || isLoadingTalas || isLoadingStyles;
 
   return (
-    <div className="min-h-screen mandala-bg">
-      <div className="container max-w-6xl px-4 py-8 mx-auto">
+    <div className="min-h-[calc(100vh-3.5rem)] mandala-bg pt-8">
+      <div className="container max-w-6xl px-4 pb-8 mx-auto">
         <header className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-raga-primary via-raga-secondary to-raga-accent bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-raga-primary via-raga-secondary to-raga-accent bg-clip-text text-transparent">
             Raga Rhythm AI Composer
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
-            A powerful tool for analysis and synthesis of Indian classical music. Analyze existing ragas or generate new compositions with customizable parameters.
+          <p className="mt-2 text-lg text-muted-foreground max-w-3xl mx-auto">
+            Analyze existing ragas or generate new compositions with customizable parameters.
           </p>
         </header>
 
