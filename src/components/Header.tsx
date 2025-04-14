@@ -2,6 +2,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "./ThemeToggle";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ const Header = () => {
         </nav>
         
         <div className="ml-auto flex items-center space-x-4">
+          <ThemeToggle />
           {!isApp && (
             <Button 
               onClick={() => navigate("/app")} 
