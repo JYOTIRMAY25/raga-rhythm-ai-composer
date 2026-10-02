@@ -1,5 +1,51 @@
-# Logs
-logs
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production & Build outputs
+dist/
+dist-ssr/
+build/
+*.local
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# Python caches, virtual environments & compiled artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Dataset & Large Audio Files (External - see docs/DATASETS.md)
+saraga1.5_hindustani/
+data/saraga1.5_hindustani/
+data/audio/
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.aiff
+scratch/
+scratch_*.py
+*.timestamp-*.mjs
+
+# Logs & Temporary files
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,16 +53,12 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
+# Editor & OS files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj

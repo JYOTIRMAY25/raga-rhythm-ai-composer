@@ -59,6 +59,8 @@ export interface CompositionSettings {
   tempo: number;
   duration: number;
   creativity: number;
+  tuning_mode?: "canonical" | "raga_aware";
+  timbre?: "ensemble" | "flute" | "bowed";
 }
 
 // Added for better organization

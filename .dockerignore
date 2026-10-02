@@ -1,0 +1,35 @@
+# Git & IDE
+.git
+.gitignore
+.gemini
+.vscode
+.idea
+
+# Node & Frontend Build
+node_modules
+dist
+.pytest_cache
+.coverage
+htmlcov
+
+# Python caches & virtualenvs
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv
+env
+
+# Artifacts & Datasets
+artifacts/
+scratch/
+saraga1.5_hindustani/
+data/
+*.wav
+*.mp3
+
+# Local Environment
+.env
+.env.local
+*.log

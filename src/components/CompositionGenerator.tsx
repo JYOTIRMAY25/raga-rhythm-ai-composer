@@ -11,8 +11,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Raga, Tala, Style, CompositionSettings } from "@/types/music";
-import { AudioAnalysis } from "@/types/music";
+import { AudioAnalysis, Style, CompositionSettings } from "@/types/music";
+import { Raga, Tala, AnalysisResponse } from "@/types/api";
 import { Music2 } from "lucide-react";
 
 interface CompositionGeneratorProps {
@@ -21,7 +21,7 @@ interface CompositionGeneratorProps {
   styles: Style[];
   isGenerating: boolean;
   onGenerate: (settings: CompositionSettings) => void;
-  analysisResult?: AudioAnalysis | null;
+  analysisResult?: AnalysisResponse | AudioAnalysis | null;
   isLoadingMusic: boolean;
 }
 
@@ -34,12 +34,17 @@ const CompositionGenerator = ({
   analysisResult,
   isLoadingMusic
 }: CompositionGeneratorProps) => {
+  // Extract defaults from either AnalysisResponse or AudioAnalysis
+  const defaultRagaId = (analysisResult && "raga" in analysisResult && analysisResult.raga?.id) || (ragas.length > 0 ? ragas[0].id : "");
+  const defaultTalaId = (analysisResult && "tala" in analysisResult && analysisResult.tala?.id) || (talas.length > 0 ? talas[0].id : "");
+  const defaultTempo = (analysisResult && "rhythm" in analysisResult && analysisResult.rhythm?.estimated_bpm) || 80;
+
   // Set defaults, potentially from analysis results
   const [settings, setSettings] = useState<CompositionSettings>({
-    raga: analysisResult?.raga?.id || (ragas.length > 0 ? ragas[0].id : ""),
-    tala: analysisResult?.tala?.id || (talas.length > 0 ? talas[0].id : ""),
+    raga: defaultRagaId || "",
+    tala: defaultTalaId || "",
     style: styles.length > 0 ? styles[0].id : "",
-    tempo: analysisResult?.tempo || 80,
+    tempo: typeof defaultTempo === "number" ? Math.round(defaultTempo) : 80,
     duration: 60, // Default 1 minute
     creativity: 50 // Medium creativity
   });
@@ -87,7 +92,7 @@ const CompositionGenerator = ({
                   <SelectContent>
                     {ragas.map((raga) => (
                       <SelectItem key={raga.id} value={raga.id}>
-                        {raga.name} - {raga.mood}
+                        {raga.name}{raga.mood ? ` - ${raga.mood}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -137,6 +142,43 @@ const CompositionGenerator = ({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <Label htmlFor="tuning">Tuning Mode</Label>
+                  <Select
+                    value={settings.tuning_mode || "canonical"}
+                    onValueChange={(value) => updateSetting("tuning_mode", value as "canonical" | "raga_aware")}
+                    disabled={isGenerating}
+                  >
+                    <SelectTrigger id="tuning" className="w-full">
+                      <SelectValue placeholder="Tuning" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="canonical">Canonical (12-TET)</SelectItem>
+                      <SelectItem value="raga_aware">Raga-Aware (Shruti)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="timbre">Synthesis Timbre</Label>
+                  <Select
+                    value={settings.timbre || "ensemble"}
+                    onValueChange={(value) => updateSetting("timbre", value as "ensemble" | "flute" | "bowed")}
+                    disabled={isGenerating}
+                  >
+                    <SelectTrigger id="timbre" className="w-full">
+                      <SelectValue placeholder="Timbre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ensemble">Ensemble</SelectItem>
+                      <SelectItem value="flute">Flute (Bansuri)</SelectItem>
+                      <SelectItem value="bowed">Bowed (Sarangi)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 

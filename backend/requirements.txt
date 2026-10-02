@@ -1,0 +1,17 @@
+# Core Framework & Web Server
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+python-multipart>=0.0.6
+
+# Scientific & DSP Computing
+numpy>=1.24.0
+scipy>=1.10.0
+librosa>=0.10.0
+
+# Google GenAI Integration
+google-genai>=0.1.0
+
+# Testing & Client
+pytest>=7.4.0
+httpx>=0.25.0
