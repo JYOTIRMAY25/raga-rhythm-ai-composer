@@ -7,24 +7,24 @@
     "numpy_version": "2.4.6"
   },
   "input_audio": {
-    "path": "D:\\raga-rhythm-ai-composer-main\\saraga1.5_hindustani\\saraga1.5_hindustani\\Anaahata by Milind Malshe\\Raag Basanti Kedar\\Raag Basanti Kedar.mp3.mp3",
+    "path": "saraga1.5_hindustani/saraga1.5_hindustani/Anaahata by Milind Malshe/Raag Basanti Kedar/Raag Basanti Kedar.mp3.mp3",
     "sample_rate": 22050,
     "samples": 220500,
     "duration_seconds": 10.0
   },
   "cold_start": {
     "timings": {
-      "preprocessing": 3.63,
-      "tonic_estimation": 820.22,
-      "pitch_extraction": 32502.79,
-      "tonic_resolution": 135.72,
-      "swara_analysis": 604.16,
-      "raga_detection": 4499.1,
-      "rhythm_analysis": 67.54,
-      "tala_classification": 748.79,
-      "beat_tracking": 322.02,
-      "total_end_to_end_ms": 39742.52,
-      "peak_memory_mb": 35.164
+      "preprocessing": 18.25,
+      "tonic_estimation": 1347.18,
+      "pitch_extraction": 44620.08,
+      "tonic_resolution": 99.34,
+      "swara_analysis": 2367.08,
+      "raga_detection": 12393.36,
+      "rhythm_analysis": 182.67,
+      "tala_classification": 2908.31,
+      "beat_tracking": 785.64,
+      "total_end_to_end_ms": 64768.47,
+      "peak_memory_mb": 35.166
     },
     "raga": "Kafi",
     "tala": "Teentaal",
@@ -35,16 +35,16 @@
   "steady_state_runs": [
     {
       "timings": {
-        "preprocessing": 5.01,
-        "tonic_estimation": 752.49,
-        "pitch_extraction": 30839.96,
-        "tonic_resolution": 61.73,
-        "swara_analysis": 1196.96,
-        "raga_detection": 5310.59,
-        "rhythm_analysis": 64.8,
-        "tala_classification": 784.8,
-        "beat_tracking": 548.9,
-        "total_end_to_end_ms": 39599.31,
+        "preprocessing": 17.69,
+        "tonic_estimation": 1558.94,
+        "pitch_extraction": 57193.97,
+        "tonic_resolution": 91.62,
+        "swara_analysis": 1228.1,
+        "raga_detection": 7490.77,
+        "rhythm_analysis": 96.04,
+        "tala_classification": 1549.41,
+        "beat_tracking": 2108.21,
+        "total_end_to_end_ms": 71399.96,
         "peak_memory_mb": 35.157
       },
       "raga": "Kafi",
@@ -55,36 +55,16 @@
     },
     {
       "timings": {
-        "preprocessing": 4.13,
-        "tonic_estimation": 639.57,
-        "pitch_extraction": 31527.12,
-        "tonic_resolution": 48.87,
-        "swara_analysis": 792.91,
-        "raga_detection": 6601.66,
-        "rhythm_analysis": 75.05,
-        "tala_classification": 867.67,
-        "beat_tracking": 500.51,
-        "total_end_to_end_ms": 41084.23,
-        "peak_memory_mb": 35.155
-      },
-      "raga": "Kafi",
-      "tala": "Teentaal",
-      "tonic_hz": 277.67,
-      "bpm": 130.7,
-      "confidence": 0.654
-    },
-    {
-      "timings": {
-        "preprocessing": 7.53,
-        "tonic_estimation": 806.17,
-        "pitch_extraction": 31876.97,
-        "tonic_resolution": 51.05,
-        "swara_analysis": 929.71,
-        "raga_detection": 4105.11,
-        "rhythm_analysis": 38.17,
-        "tala_classification": 447.87,
-        "beat_tracking": 306.17,
-        "total_end_to_end_ms": 38594.97,
+        "preprocessing": 10.91,
+        "tonic_estimation": 2502.62,
+        "pitch_extraction": 63937.5,
+        "tonic_resolution": 446.65,
+        "swara_analysis": 3594.98,
+        "raga_detection": 14179.41,
+        "rhythm_analysis": 86.57,
+        "tala_classification": 858.04,
+        "beat_tracking": 532.33,
+        "total_end_to_end_ms": 86227.66,
         "peak_memory_mb": 35.156
       },
       "raga": "Kafi",
@@ -95,16 +75,16 @@
     },
     {
       "timings": {
-        "preprocessing": 5.22,
-        "tonic_estimation": 1022.47,
-        "pitch_extraction": 114284.55,
-        "tonic_resolution": 2002.75,
-        "swara_analysis": 18737.2,
-        "raga_detection": 82405.48,
-        "rhythm_analysis": 2074.04,
-        "tala_classification": 5813.87,
-        "beat_tracking": 1770.38,
-        "total_end_to_end_ms": 228910.95,
+        "preprocessing": 5.24,
+        "tonic_estimation": 1534.72,
+        "pitch_extraction": 37010.58,
+        "tonic_resolution": 60.89,
+        "swara_analysis": 864.68,
+        "raga_detection": 4248.75,
+        "rhythm_analysis": 79.73,
+        "tala_classification": 763.31,
+        "beat_tracking": 348.05,
+        "total_end_to_end_ms": 44945.82,
         "peak_memory_mb": 35.156
       },
       "raga": "Kafi",
@@ -115,16 +95,36 @@
     },
     {
       "timings": {
-        "preprocessing": 10.03,
-        "tonic_estimation": 2269.97,
-        "pitch_extraction": 134119.99,
-        "tonic_resolution": 236.23,
-        "swara_analysis": 2606.17,
-        "raga_detection": 12540.38,
-        "rhythm_analysis": 95.59,
-        "tala_classification": 1878.3,
-        "beat_tracking": 1978.95,
-        "total_end_to_end_ms": 155810.42,
+        "preprocessing": 4.04,
+        "tonic_estimation": 629.95,
+        "pitch_extraction": 28890.29,
+        "tonic_resolution": 47.15,
+        "swara_analysis": 599.21,
+        "raga_detection": 4313.0,
+        "rhythm_analysis": 62.16,
+        "tala_classification": 546.77,
+        "beat_tracking": 334.07,
+        "total_end_to_end_ms": 35453.32,
+        "peak_memory_mb": 35.156
+      },
+      "raga": "Kafi",
+      "tala": "Teentaal",
+      "tonic_hz": 277.67,
+      "bpm": 130.7,
+      "confidence": 0.654
+    },
+    {
+      "timings": {
+        "preprocessing": 10.89,
+        "tonic_estimation": 835.17,
+        "pitch_extraction": 34426.78,
+        "tonic_resolution": 59.67,
+        "swara_analysis": 838.41,
+        "raga_detection": 3930.71,
+        "rhythm_analysis": 60.31,
+        "tala_classification": 509.79,
+        "beat_tracking": 521.72,
+        "total_end_to_end_ms": 41228.21,
         "peak_memory_mb": 35.156
       },
       "raga": "Kafi",
@@ -136,74 +136,74 @@
   ],
   "steady_state_statistics": {
     "preprocessing": {
-      "mean": 6.38,
-      "median": 5.22,
-      "min": 4.13,
-      "max": 10.03,
-      "std": 2.14
+      "mean": 9.75,
+      "median": 10.89,
+      "min": 4.04,
+      "max": 17.69,
+      "std": 4.87
     },
     "tonic_estimation": {
-      "mean": 1098.13,
-      "median": 806.17,
-      "min": 639.57,
-      "max": 2269.97,
-      "std": 598.99
+      "mean": 1412.28,
+      "median": 1534.72,
+      "min": 629.95,
+      "max": 2502.62,
+      "std": 658.85
     },
     "pitch_extraction": {
-      "mean": 68529.72,
-      "median": 31876.97,
-      "min": 30839.96,
-      "max": 134119.99,
-      "std": 45888.39
+      "mean": 44291.82,
+      "median": 37010.58,
+      "min": 28890.29,
+      "max": 63937.5,
+      "std": 13711.02
     },
     "tonic_resolution": {
-      "mean": 480.13,
-      "median": 61.73,
-      "min": 48.87,
-      "max": 2002.75,
-      "std": 764.59
+      "mean": 141.2,
+      "median": 60.89,
+      "min": 47.15,
+      "max": 446.65,
+      "std": 153.43
     },
     "swara_analysis": {
-      "mean": 4852.59,
-      "median": 1196.96,
-      "min": 792.91,
-      "max": 18737.2,
-      "std": 6972.27
+      "mean": 1425.08,
+      "median": 864.68,
+      "min": 599.21,
+      "max": 3594.98,
+      "std": 1103.41
     },
     "raga_detection": {
-      "mean": 22192.64,
-      "median": 6601.66,
-      "min": 4105.11,
-      "max": 82405.48,
-      "std": 30245.64
+      "mean": 6832.53,
+      "median": 4313.0,
+      "min": 3930.71,
+      "max": 14179.41,
+      "std": 3894.98
     },
     "rhythm_analysis": {
-      "mean": 469.53,
-      "median": 75.05,
-      "min": 38.17,
-      "max": 2074.04,
-      "std": 802.47
+      "mean": 76.96,
+      "median": 79.73,
+      "min": 60.31,
+      "max": 96.04,
+      "std": 13.86
     },
     "tala_classification": {
-      "mean": 1958.5,
-      "median": 867.67,
-      "min": 447.87,
-      "max": 5813.87,
-      "std": 1985.94
+      "mean": 845.46,
+      "median": 763.31,
+      "min": 509.79,
+      "max": 1549.41,
+      "std": 375.32
     },
     "beat_tracking": {
-      "mean": 1020.98,
-      "median": 548.9,
-      "min": 306.17,
-      "max": 1978.95,
-      "std": 704.84
+      "mean": 768.88,
+      "median": 521.72,
+      "min": 334.07,
+      "max": 2108.21,
+      "std": 674.83
     },
     "total_end_to_end_ms": {
-      "mean": 100799.98,
-      "median": 41084.23,
-      "min": 38594.97,
-      "max": 228910.95,
-      "std": 78255.38
+      "mean": 55850.99,
+      "median": 44945.82,
+      "min": 35453.32,
+      "max": 86227.66,
+      "std": 19561.83
     },
     "peak_memory_mb": {
       "mean": 35.16,
@@ -215,486 +215,486 @@
   },
   "top_cumulative_functions": [
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\scripts\\profile_analysis_pipeline.py",
+      "file": "scripts/profile_analysis_pipeline.py",
       "line": 50,
       "function": "run_single_benchmark",
       "ncalls": 1,
-      "tottime_ms": 3.19,
-      "cumtime_ms": 28947.1
+      "tottime_ms": 2.39,
+      "cumtime_ms": 9292.61
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\pipeline.py",
+      "file": "backend/app/analysis/pipeline.py",
       "line": 352,
       "function": "process_waveform",
       "ncalls": 1,
-      "tottime_ms": 2.38,
-      "cumtime_ms": 28940.81
+      "tottime_ms": 1.53,
+      "cumtime_ms": 9289.24
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\pipeline.py",
+      "file": "backend/app/analysis/pipeline.py",
       "line": 397,
       "function": "_process_preprocessed_audio",
       "ncalls": 1,
-      "tottime_ms": 100.79,
-      "cumtime_ms": 28920.23
+      "tottime_ms": 45.06,
+      "cumtime_ms": 9276.75
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\pitch_extractor.py",
+      "file": "backend/app/analysis/pitch_extractor.py",
       "line": 120,
       "function": "extract",
       "ncalls": 1,
-      "tottime_ms": 6612.99,
-      "cumtime_ms": 16142.74
+      "tottime_ms": 1927.17,
+      "cumtime_ms": 4752.42
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\raga_detector.py",
+      "file": "backend/app/analysis/raga_detector.py",
       "line": 1213,
       "function": "detect",
       "ncalls": 1,
-      "tottime_ms": 8.9,
-      "cumtime_ms": 7254.6
+      "tottime_ms": 4.46,
+      "cumtime_ms": 2872.33
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\raga_detector.py",
+      "file": "backend/app/analysis/raga_detector.py",
       "line": 1366,
       "function": "_score_candidate",
       "ncalls": 70,
-      "tottime_ms": 42.54,
-      "cumtime_ms": 7242.49
+      "tottime_ms": 25.14,
+      "cumtime_ms": 2866.16
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
-      "line": 260,
+      "file": "backend/app/analysis/motif_matcher.py",
+      "line": 271,
       "function": "match_raga_motifs",
       "ncalls": 70,
-      "tottime_ms": 126.21,
-      "cumtime_ms": 7129.92
+      "tottime_ms": 34.53,
+      "cumtime_ms": 2816.23
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
-      "line": 446,
+      "file": "backend/app/analysis/motif_matcher.py",
+      "line": 457,
       "function": "_sliding_window_similarity",
       "ncalls": 287,
-      "tottime_ms": 1648.88,
-      "cumtime_ms": 6613.0
+      "tottime_ms": 671.74,
+      "cumtime_ms": 2630.39
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
-      "line": 493,
+      "file": "backend/app/analysis/motif_matcher.py",
+      "line": 504,
       "function": "compute_sequence_similarity",
       "ncalls": 25356,
-      "tottime_ms": 3283.34,
-      "cumtime_ms": 3637.87
+      "tottime_ms": 1324.35,
+      "cumtime_ms": 1450.74
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\tonic_estimator.py",
+      "file": "backend/app/analysis/tonic_estimator.py",
       "line": 107,
       "function": "estimate",
       "ncalls": 1,
-      "tottime_ms": 1291.94,
-      "cumtime_ms": 3156.04
+      "tottime_ms": 382.39,
+      "cumtime_ms": 896.44
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\pitch_extractor.py",
+      "file": "backend/app/analysis/pitch_extractor.py",
       "line": 185,
       "function": "_fast_slice_max",
       "ncalls": 60991,
-      "tottime_ms": 1890.99,
-      "cumtime_ms": 1890.99
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
-      "line": 3699,
-      "function": "mean",
-      "ncalls": 3271,
-      "tottime_ms": 141.7,
-      "cumtime_ms": 1359.92
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
-      "line": 48,
-      "function": "_wrapfunc",
-      "ncalls": 14594,
-      "tottime_ms": 183.99,
-      "cumtime_ms": 1254.92
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\lib\\_function_base_impl.py",
-      "line": 5389,
-      "function": "insert",
-      "ncalls": 1840,
-      "tottime_ms": 497.95,
-      "cumtime_ms": 1250.81
+      "tottime_ms": 572.08,
+      "cumtime_ms": 572.08
     },
     {
       "file": "~",
       "line": 0,
       "function": "<built-in method builtins.max>",
-      "ncalls": 208200,
-      "tottime_ms": 1225.5,
-      "cumtime_ms": 1225.72
+      "ncalls": 208202,
+      "tottime_ms": 424.93,
+      "cumtime_ms": 425.14
     },
     {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\_methods.py",
-      "line": 115,
-      "function": "_mean",
-      "ncalls": 3272,
-      "tottime_ms": 595.54,
-      "cumtime_ms": 1222.07
+      "file": "site-packages/numpy/_core/fromnumeric.py",
+      "line": 48,
+      "function": "_wrapfunc",
+      "ncalls": 14594,
+      "tottime_ms": 62.24,
+      "cumtime_ms": 397.49
     },
     {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\fft\\_pocketfft.py",
+      "file": "site-packages/numpy/lib/_function_base_impl.py",
+      "line": 5389,
+      "function": "insert",
+      "ncalls": 1840,
+      "tottime_ms": 151.84,
+      "cumtime_ms": 391.39
+    },
+    {
+      "file": "site-packages/numpy/fft/_pocketfft.py",
       "line": 324,
       "function": "rfft",
       "ncalls": 2242,
-      "tottime_ms": 54.65,
-      "cumtime_ms": 1201.83
+      "tottime_ms": 16.79,
+      "cumtime_ms": 370.9
     },
     {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\scipy\\signal\\_spectral_py.py",
-      "line": 515,
-      "function": "welch",
-      "ncalls": 1,
-      "tottime_ms": 2.68,
-      "cumtime_ms": 1166.95
+      "file": "site-packages/numpy/_core/fromnumeric.py",
+      "line": 3699,
+      "function": "mean",
+      "ncalls": 3271,
+      "tottime_ms": 47.21,
+      "cumtime_ms": 356.7
     },
     {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\scipy\\signal\\_spectral_py.py",
-      "line": 690,
-      "function": "csd",
-      "ncalls": 1,
-      "tottime_ms": 13.96,
-      "cumtime_ms": 1164.27
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\fft\\_pocketfft.py",
+      "file": "site-packages/numpy/fft/_pocketfft.py",
       "line": 58,
       "function": "_raw_fft",
       "ncalls": 2242,
-      "tottime_ms": 1123.99,
-      "cumtime_ms": 1142.67
+      "tottime_ms": 347.5,
+      "cumtime_ms": 352.69
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\beat_tracker.py",
-      "line": 304,
-      "function": "track",
-      "ncalls": 2,
-      "tottime_ms": 1.89,
-      "cumtime_ms": 992.46
+      "file": "site-packages/numpy/_core/_methods.py",
+      "line": 115,
+      "function": "_mean",
+      "ncalls": 3272,
+      "tottime_ms": 152.14,
+      "cumtime_ms": 311.11
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\beat_tracker.py",
-      "line": 170,
-      "function": "evaluate_tempo_hypotheses",
-      "ncalls": 2,
-      "tottime_ms": 1.56,
-      "cumtime_ms": 980.97
-    },
-    {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\beat_tracker.py",
-      "line": 111,
-      "function": "_dp_track_beats_for_period",
-      "ncalls": 6,
-      "tottime_ms": 648.57,
-      "cumtime_ms": 975.6
-    },
-    {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\tala_classifier.py",
-      "line": 408,
-      "function": "classify",
+      "file": "site-packages/scipy/signal/_spectral_py.py",
+      "line": 515,
+      "function": "welch",
       "ncalls": 1,
-      "tottime_ms": 3.45,
-      "cumtime_ms": 848.64
+      "tottime_ms": 0.11,
+      "cumtime_ms": 302.86
+    },
+    {
+      "file": "site-packages/scipy/signal/_spectral_py.py",
+      "line": 690,
+      "function": "csd",
+      "ncalls": 1,
+      "tottime_ms": 9.68,
+      "cumtime_ms": 302.75
     },
     {
       "file": "~",
       "line": 0,
       "function": "<method 'intersection' of 'set' objects>",
       "ncalls": 86294,
-      "tottime_ms": 759.73,
-      "cumtime_ms": 759.73
+      "tottime_ms": 298.28,
+      "cumtime_ms": 298.28
     },
     {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
+      "file": "backend/app/analysis/beat_tracker.py",
+      "line": 304,
+      "function": "track",
+      "ncalls": 2,
+      "tottime_ms": 0.31,
+      "cumtime_ms": 288.4
+    },
+    {
+      "file": "backend/app/analysis/beat_tracker.py",
+      "line": 170,
+      "function": "evaluate_tempo_hypotheses",
+      "ncalls": 2,
+      "tottime_ms": 0.63,
+      "cumtime_ms": 285.07
+    },
+    {
+      "file": "backend/app/analysis/beat_tracker.py",
+      "line": 111,
+      "function": "_dp_track_beats_for_period",
+      "ncalls": 6,
+      "tottime_ms": 191.2,
+      "cumtime_ms": 282.6
+    },
+    {
+      "file": "site-packages/scipy/signal/_short_time_fft.py",
+      "line": 1256,
+      "function": "spectrogram",
+      "ncalls": 1,
+      "tottime_ms": 33.09,
+      "cumtime_ms": 257.02
+    },
+    {
+      "file": "backend/app/analysis/tala_classifier.py",
+      "line": 408,
+      "function": "classify",
+      "ncalls": 1,
+      "tottime_ms": 0.52,
+      "cumtime_ms": 252.57
+    },
+    {
+      "file": "site-packages/numpy/_core/fromnumeric.py",
       "line": 2304,
       "function": "sum",
       "ncalls": 4422,
-      "tottime_ms": 103.84,
-      "cumtime_ms": 758.88
+      "tottime_ms": 38.03,
+      "cumtime_ms": 240.68
     },
     {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
+      "file": "site-packages/scipy/signal/_short_time_fft.py",
+      "line": 1168,
+      "function": "stft_detrend",
+      "ncalls": 1,
+      "tottime_ms": 57.07,
+      "cumtime_ms": 223.93
+    },
+    {
+      "file": "site-packages/numpy/_core/fromnumeric.py",
       "line": 66,
       "function": "_wrapreduction",
       "ncalls": 4981,
-      "tottime_ms": 256.87,
-      "cumtime_ms": 701.23
+      "tottime_ms": 80.6,
+      "cumtime_ms": 217.62
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\swara_analyzer.py",
+      "file": "backend/app/analysis/swara_analyzer.py",
       "line": 137,
       "function": "analyze",
       "ncalls": 1,
-      "tottime_ms": 170.71,
-      "cumtime_ms": 671.48
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
-      "line": 1321,
-      "function": "argmin",
-      "ncalls": 4087,
-      "tottime_ms": 191.85,
-      "cumtime_ms": 660.19
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
-      "line": 2838,
-      "function": "cumsum",
-      "ncalls": 4364,
-      "tottime_ms": 99.73,
-      "cumtime_ms": 650.46
+      "tottime_ms": 70.99,
+      "cumtime_ms": 211.01
     }
   ],
   "top_selftime_functions": [
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\pitch_extractor.py",
+      "file": "backend/app/analysis/pitch_extractor.py",
       "line": 120,
       "function": "extract",
       "ncalls": 1,
-      "tottime_ms": 6612.99,
-      "cumtime_ms": 16142.74
+      "tottime_ms": 1927.17,
+      "cumtime_ms": 4752.42
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
-      "line": 493,
+      "file": "backend/app/analysis/motif_matcher.py",
+      "line": 504,
       "function": "compute_sequence_similarity",
       "ncalls": 25356,
-      "tottime_ms": 3283.34,
-      "cumtime_ms": 3637.87
+      "tottime_ms": 1324.35,
+      "cumtime_ms": 1450.74
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\pitch_extractor.py",
+      "file": "backend/app/analysis/motif_matcher.py",
+      "line": 457,
+      "function": "_sliding_window_similarity",
+      "ncalls": 287,
+      "tottime_ms": 671.74,
+      "cumtime_ms": 2630.39
+    },
+    {
+      "file": "backend/app/analysis/pitch_extractor.py",
       "line": 185,
       "function": "_fast_slice_max",
       "ncalls": 60991,
-      "tottime_ms": 1890.99,
-      "cumtime_ms": 1890.99
-    },
-    {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
-      "line": 446,
-      "function": "_sliding_window_similarity",
-      "ncalls": 287,
-      "tottime_ms": 1648.88,
-      "cumtime_ms": 6613.0
-    },
-    {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\tonic_estimator.py",
-      "line": 107,
-      "function": "estimate",
-      "ncalls": 1,
-      "tottime_ms": 1291.94,
-      "cumtime_ms": 3156.04
+      "tottime_ms": 572.08,
+      "cumtime_ms": 572.08
     },
     {
       "file": "~",
       "line": 0,
       "function": "<built-in method builtins.max>",
-      "ncalls": 208200,
-      "tottime_ms": 1225.5,
-      "cumtime_ms": 1225.72
+      "ncalls": 208202,
+      "tottime_ms": 424.93,
+      "cumtime_ms": 425.14
     },
     {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\fft\\_pocketfft.py",
+      "file": "backend/app/analysis/tonic_estimator.py",
+      "line": 107,
+      "function": "estimate",
+      "ncalls": 1,
+      "tottime_ms": 382.39,
+      "cumtime_ms": 896.44
+    },
+    {
+      "file": "site-packages/numpy/fft/_pocketfft.py",
       "line": 58,
       "function": "_raw_fft",
       "ncalls": 2242,
-      "tottime_ms": 1123.99,
-      "cumtime_ms": 1142.67
+      "tottime_ms": 347.5,
+      "cumtime_ms": 352.69
     },
     {
       "file": "~",
       "line": 0,
       "function": "<method 'intersection' of 'set' objects>",
       "ncalls": 86294,
-      "tottime_ms": 759.73,
-      "cumtime_ms": 759.73
+      "tottime_ms": 298.28,
+      "cumtime_ms": 298.28
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\beat_tracker.py",
+      "file": "backend/app/analysis/beat_tracker.py",
       "line": 111,
       "function": "_dp_track_beats_for_period",
       "ncalls": 6,
-      "tottime_ms": 648.57,
-      "cumtime_ms": 975.6
+      "tottime_ms": 191.2,
+      "cumtime_ms": 282.6
     },
     {
       "file": "~",
       "line": 0,
       "function": "<method 'reduce' of 'numpy.ufunc' objects>",
-      "ncalls": 8680,
-      "tottime_ms": 629.88,
-      "cumtime_ms": 629.88
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\_methods.py",
-      "line": 115,
-      "function": "_mean",
-      "ncalls": 3272,
-      "tottime_ms": 595.54,
-      "cumtime_ms": 1222.07
-    },
-    {
-      "file": "~",
-      "line": 0,
-      "function": "<built-in method builtins.sum>",
-      "ncalls": 576,
-      "tottime_ms": 504.01,
-      "cumtime_ms": 527.65
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\lib\\_function_base_impl.py",
-      "line": 5389,
-      "function": "insert",
-      "ncalls": 1840,
-      "tottime_ms": 497.95,
-      "cumtime_ms": 1250.81
+      "ncalls": 8682,
+      "tottime_ms": 172.4,
+      "cumtime_ms": 172.4
     },
     {
       "file": "~",
       "line": 0,
       "function": "<built-in method builtins.round>",
       "ncalls": 65805,
-      "tottime_ms": 487.06,
-      "cumtime_ms": 487.06
+      "tottime_ms": 152.45,
+      "cumtime_ms": 152.45
     },
     {
-      "file": "~",
-      "line": 0,
-      "function": "<method 'cumsum' of 'numpy.ndarray' objects>",
-      "ncalls": 4364,
-      "tottime_ms": 468.42,
-      "cumtime_ms": 468.42
+      "file": "site-packages/numpy/_core/_methods.py",
+      "line": 115,
+      "function": "_mean",
+      "ncalls": 3272,
+      "tottime_ms": 152.14,
+      "cumtime_ms": 311.11
     },
     {
-      "file": "~",
-      "line": 0,
-      "function": "<built-in method builtins.min>",
-      "ncalls": 71618,
-      "tottime_ms": 439.48,
-      "cumtime_ms": 439.48
+      "file": "site-packages/numpy/lib/_function_base_impl.py",
+      "line": 5389,
+      "function": "insert",
+      "ncalls": 1840,
+      "tottime_ms": 151.84,
+      "cumtime_ms": 391.39
     },
     {
       "file": "~",
       "line": 0,
       "function": "<built-in method builtins.sorted>",
       "ncalls": 4169,
-      "tottime_ms": 419.42,
-      "cumtime_ms": 630.68
+      "tottime_ms": 143.58,
+      "cumtime_ms": 204.73
     },
     {
       "file": "~",
       "line": 0,
       "function": "<method 'argmin' of 'numpy.ndarray' objects>",
       "ncalls": 4087,
-      "tottime_ms": 371.29,
-      "cumtime_ms": 371.29
+      "tottime_ms": 136.05,
+      "cumtime_ms": 136.05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'cumsum' of 'numpy.ndarray' objects>",
+      "ncalls": 4364,
+      "tottime_ms": 126.07,
+      "cumtime_ms": 126.07
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.min>",
+      "ncalls": 71619,
+      "tottime_ms": 117.78,
+      "cumtime_ms": 117.78
     },
     {
       "file": "~",
       "line": 0,
       "function": "<built-in method numpy._core._multiarray_umath.correlate2>",
       "ncalls": 2182,
-      "tottime_ms": 356.96,
-      "cumtime_ms": 356.96
-    },
-    {
-      "file": "~",
-      "line": 0,
-      "function": "<built-in method builtins.len>",
-      "ncalls": 189169,
-      "tottime_ms": 334.0,
-      "cumtime_ms": 334.0
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
-      "line": 66,
-      "function": "_wrapreduction",
-      "ncalls": 4981,
-      "tottime_ms": 256.87,
-      "cumtime_ms": 701.23
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\numeric.py",
-      "line": 1431,
-      "function": "normalize_axis_tuple",
-      "ncalls": 3687,
-      "tottime_ms": 252.23,
-      "cumtime_ms": 320.31
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\scipy\\signal\\_short_time_fft.py",
-      "line": 1168,
-      "function": "stft_detrend",
-      "ncalls": 1,
-      "tottime_ms": 248.63,
-      "cumtime_ms": 609.32
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\_methods.py",
-      "line": 73,
-      "function": "_count_reduce_items",
-      "ncalls": 3284,
-      "tottime_ms": 244.53,
-      "cumtime_ms": 267.78
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\numeric.py",
-      "line": 1493,
-      "function": "moveaxis",
-      "ncalls": 1843,
-      "tottime_ms": 228.45,
-      "cumtime_ms": 630.58
-    },
-    {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\pitch_extractor.py",
-      "line": 256,
-      "function": "<lambda>",
-      "ncalls": 31008,
-      "tottime_ms": 211.21,
-      "cumtime_ms": 211.21
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
-      "line": 1321,
-      "function": "argmin",
-      "ncalls": 4087,
-      "tottime_ms": 191.85,
-      "cumtime_ms": 660.19
-    },
-    {
-      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
-      "line": 48,
-      "function": "_wrapfunc",
-      "ncalls": 14594,
-      "tottime_ms": 183.99,
-      "cumtime_ms": 1254.92
+      "tottime_ms": 102.8,
+      "cumtime_ms": 102.8
     },
     {
       "file": "~",
       "line": 0,
       "function": "<built-in method scipy.fft._pocketfft.pypocketfft.r2c>",
       "ncalls": 53,
-      "tottime_ms": 170.8,
-      "cumtime_ms": 170.8
+      "tottime_ms": 102.29,
+      "cumtime_ms": 102.29
     },
     {
-      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\swara_analyzer.py",
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.len>",
+      "ncalls": 189169,
+      "tottime_ms": 102.26,
+      "cumtime_ms": 102.26
+    },
+    {
+      "file": "site-packages/numpy/_core/numeric.py",
+      "line": 1431,
+      "function": "normalize_axis_tuple",
+      "ncalls": 3687,
+      "tottime_ms": 84.12,
+      "cumtime_ms": 104.36
+    },
+    {
+      "file": "site-packages/numpy/_core/fromnumeric.py",
+      "line": 66,
+      "function": "_wrapreduction",
+      "ncalls": 4981,
+      "tottime_ms": 80.6,
+      "cumtime_ms": 217.62
+    },
+    {
+      "file": "site-packages/numpy/_core/numeric.py",
+      "line": 1493,
+      "function": "moveaxis",
+      "ncalls": 1843,
+      "tottime_ms": 77.55,
+      "cumtime_ms": 205.23
+    },
+    {
+      "file": "site-packages/numpy/_core/_methods.py",
+      "line": 73,
+      "function": "_count_reduce_items",
+      "ncalls": 3284,
+      "tottime_ms": 72.93,
+      "cumtime_ms": 76.67
+    },
+    {
+      "file": "backend/app/analysis/swara_analyzer.py",
       "line": 137,
       "function": "analyze",
       "ncalls": 1,
-      "tottime_ms": 170.71,
-      "cumtime_ms": 671.48
+      "tottime_ms": 70.99,
+      "cumtime_ms": 211.01
+    },
+    {
+      "file": "backend/app/analysis/motif_matcher.py",
+      "line": 241,
+      "function": "extract_stream_symbols",
+      "ncalls": 70,
+      "tottime_ms": 65.06,
+      "cumtime_ms": 86.53
+    },
+    {
+      "file": "site-packages/numpy/_core/fromnumeric.py",
+      "line": 48,
+      "function": "_wrapfunc",
+      "ncalls": 14594,
+      "tottime_ms": 62.24,
+      "cumtime_ms": 397.49
+    },
+    {
+      "file": "backend/app/analysis/pitch_extractor.py",
+      "line": 256,
+      "function": "<lambda>",
+      "ncalls": 31008,
+      "tottime_ms": 61.13,
+      "cumtime_ms": 61.13
+    },
+    {
+      "file": "site-packages/scipy/signal/_short_time_fft.py",
+      "line": 1168,
+      "function": "stft_detrend",
+      "ncalls": 1,
+      "tottime_ms": 57.07,
+      "cumtime_ms": 223.93
+    },
+    {
+      "file": "site-packages/numpy/_core/fromnumeric.py",
+      "line": 3699,
+      "function": "mean",
+      "ncalls": 3271,
+      "tottime_ms": 47.21,
+      "cumtime_ms": 356.7
     }
   ]
 }

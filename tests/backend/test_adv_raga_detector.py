@@ -245,6 +245,37 @@ class TestAdversarialRagaDetector(unittest.TestCase):
 
         self.assertEqual(MelodicPhraseParser.parse_motif(None).swaras, [])
 
+    def test_melodic_phrase_parser_bounded_cache_invariants(self):
+        """Verify MelodicPhraseParser cache is bounded, reuses entries, and evicts safely."""
+        MelodicPhraseParser.clear_cache()
+        self.assertEqual(len(MelodicPhraseParser._CACHE), 0)
+
+        # 1. Parse and ensure cached
+        res1 = MelodicPhraseParser.parse_motif("N R G")
+        self.assertEqual(len(MelodicPhraseParser._CACHE), 1)
+        res2 = MelodicPhraseParser.parse_motif("N R G")
+        self.assertIs(res1, res2)
+
+        # 2. Add items up to MAX_CACHE_SIZE and verify no unbounded growth
+        orig_max = MelodicPhraseParser.MAX_CACHE_SIZE
+        try:
+            MelodicPhraseParser.MAX_CACHE_SIZE = 10
+            MelodicPhraseParser.clear_cache()
+
+            for i in range(25):
+                # Insert arbitrary synthetic motif sequences
+                MelodicPhraseParser.parse_motif(f"S R G M P {i}")
+
+            # Must never exceed MAX_CACHE_SIZE
+            self.assertEqual(len(MelodicPhraseParser._CACHE), 10)
+
+            # Check that recent entries exist and old entries were evicted
+            self.assertIn("S R G M P 24", MelodicPhraseParser._CACHE)
+            self.assertNotIn("S R G M P 0", MelodicPhraseParser._CACHE)
+        finally:
+            MelodicPhraseParser.MAX_CACHE_SIZE = orig_max
+            MelodicPhraseParser.clear_cache()
+
     # ------------------------------------------------------------------------
     # 3. Melodic Motif Matching Tests (AC4, AC5)
     # ------------------------------------------------------------------------

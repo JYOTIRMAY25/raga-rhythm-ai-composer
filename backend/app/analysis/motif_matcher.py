@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
@@ -85,15 +86,23 @@ class MelodicPhraseParser:
     - Stripping invalid non-swara characters (punctuation, numbers, whitespace)
     """
 
-    _CACHE: Dict[Any, ParsedMelodicMotif] = {}
+    MAX_CACHE_SIZE: int = 2048
+    _CACHE: OrderedDict[Any, ParsedMelodicMotif] = OrderedDict()
+
+    @classmethod
+    def clear_cache(cls) -> None:
+        """Clears the internal LRU phrase cache."""
+        cls._CACHE.clear()
 
     @classmethod
     def parse_motif(cls, phrase_str: Union[str, Sequence[str]]) -> ParsedMelodicMotif:
         """
         Parses a raw phrase string or sequence into a structured ParsedMelodicMotif.
+        Uses a bounded LRU cache to prevent unbounded memory growth.
         """
         cache_key = tuple(phrase_str) if isinstance(phrase_str, (list, tuple)) else str(phrase_str)
         if cache_key in cls._CACHE:
+            cls._CACHE.move_to_end(cache_key)
             return cls._CACHE[cache_key]
 
         if isinstance(phrase_str, (list, tuple)):
@@ -133,6 +142,8 @@ class MelodicPhraseParser:
             trigrams=trigrams,
             is_valid=is_valid,
         )
+        if len(cls._CACHE) >= cls.MAX_CACHE_SIZE:
+            cls._CACHE.popitem(last=False)
         cls._CACHE[cache_key] = res
         return res
 

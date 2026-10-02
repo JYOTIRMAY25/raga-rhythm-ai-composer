@@ -182,11 +182,30 @@ def run_profiling_benchmark(
     stats_stream = pstats.Stats(profiler)
     stats_stream.sort_stats(pstats.SortKey.CUMULATIVE)
 
-    # Extract top 30 by cumulative time and self time
+    repo_root = Path(__file__).resolve().parent.parent
+
+    def _sanitize(p: str) -> str:
+        if not p:
+            return ""
+        try:
+            po = Path(p)
+            if po.is_relative_to(repo_root):
+                return str(po.relative_to(repo_root)).replace("\\", "/")
+        except Exception:
+            pass
+        if "site-packages" in p:
+            idx = p.find("site-packages")
+            return p[idx:].replace("\\", "/")
+        if "Lib" in p:
+            idx = p.find("Lib")
+            return p[idx:].replace("\\", "/")
+        return os.path.basename(p)
+
+    # Extract top 30 by cumulative time and self time with sanitized paths
     top_cumulative: List[Dict[str, Any]] = []
     for func, (cc, nc, tt, ct, callers) in sorted(stats_stream.stats.items(), key=lambda x: x[1][3], reverse=True)[:30]:
         top_cumulative.append({
-            "file": func[0],
+            "file": _sanitize(func[0]),
             "line": func[1],
             "function": func[2],
             "ncalls": nc,
@@ -197,7 +216,7 @@ def run_profiling_benchmark(
     top_selftime: List[Dict[str, Any]] = []
     for func, (cc, nc, tt, ct, callers) in sorted(stats_stream.stats.items(), key=lambda x: x[1][2], reverse=True)[:30]:
         top_selftime.append({
-            "file": func[0],
+            "file": _sanitize(func[0]),
             "line": func[1],
             "function": func[2],
             "ncalls": nc,
@@ -208,7 +227,7 @@ def run_profiling_benchmark(
     report = {
         "environment": env_info,
         "input_audio": {
-            "path": str(audio_path) if audio_path else "synthetic",
+            "path": _sanitize(str(audio_path)) if audio_path else "synthetic",
             "sample_rate": sr,
             "samples": sample_count,
             "duration_seconds": actual_duration,
