@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-02T06:08:26Z",
+  "timestamp": "2026-10-02T07:28:54Z",
   "summary": {
     "total_ragas": 70,
     "total_talas": 9,
@@ -11,8 +11,8 @@
     "total_failed_runs": 0,
     "validation_pass_rate_pct": 100.0,
     "total_invariant_violations": 0,
-    "runtime_seconds": 105.86,
-    "throughput_compositions_per_sec": 71.41
+    "runtime_seconds": 97.79,
+    "throughput_compositions_per_sec": 77.31
   },
   "event_statistics": {
     "min_events": 22,

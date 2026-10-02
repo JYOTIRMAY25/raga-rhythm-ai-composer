@@ -175,7 +175,23 @@ class PitchExtractor:
         freq_bin_scale = n_fft / sample_rate
         window = np.hanning(frame_len).astype(np.float32)
 
+        # Precomputed index arrays and helpers for fast frame processing
         taus = np.arange(tau_max + 1)
+        taus_w = taus + w_len
+        idx_range_full = np.arange(1, tau_max + 1, dtype=np.float64)
+        cumsum_buf = np.empty(frame_len + 1, dtype=np.float64)
+        cumsum_buf[0] = 0.0
+
+        def _fast_slice_max(arr: np.ndarray, start: int, end: int) -> float:
+            if start >= end:
+                return 0.0
+            val_max = float(arr[start])
+            for k in range(start + 1, end):
+                v = float(arr[k])
+                if v > val_max:
+                    val_max = v
+            return val_max
+
         frame_candidates: List[List[Dict[str, Any]]] = []
 
         # Step 1: Candidate generation & multi-evidence scoring per frame
@@ -197,13 +213,12 @@ class PitchExtractor:
                 frame_candidates.append([])
                 continue
 
-            # Compute shifted energies using cumulative sum for O(1) efficiency
-            sq = np.pad(frame ** 2, (1, 0), mode="constant")
-            cumsum = np.cumsum(sq)
-            shifted_energies = cumsum[taus + w_len] - cumsum[taus]
+            # Compute shifted energies using cumulative sum for O(1) efficiency (zero allocation)
+            np.cumsum(frame ** 2, out=cumsum_buf[1:len(frame) + 1])
+            shifted_energies = cumsum_buf[taus_w] - cumsum_buf[taus]
 
-            # Fast cross-correlation
-            corr = signal.correlate(frame[:w_len + tau_max], x, mode="valid")
+            # Fast cross-correlation using numpy C correlate
+            corr = np.correlate(frame[:w_len + tau_max], x, mode="valid")
             corr_len = min(len(corr), tau_max + 1)
             d = x_energy + shifted_energies[:corr_len] - 2.0 * corr[:corr_len]
 
@@ -212,8 +227,7 @@ class PitchExtractor:
             d_prime[0] = 1.0
             if len(d) > 1:
                 cum_d = np.cumsum(d[1:])
-                idx_range = np.arange(1, len(d), dtype=np.float64)
-                denom = cum_d / idx_range
+                denom = cum_d / idx_range_full[:len(d) - 1]
                 denom[denom == 0.0] = 1e-12
                 d_prime[1:len(d)] = d[1:] / denom
 
@@ -222,10 +236,17 @@ class PitchExtractor:
                 frame_candidates.append([])
                 continue
 
-            # Detect all candidate local minima (valleys) in CMNDF
-            padded = np.pad(search_range, (1, 1), mode="edge")
-            local_min_mask = (search_range < padded[:-2]) & (search_range < padded[2:])
-            min_indices = np.where(local_min_mask)[0] + tau_min
+            # Detect all candidate local minima (valleys) in CMNDF without np.pad
+            if len(search_range) >= 3:
+                mid = search_range[1:-1]
+                min_indices = np.where((mid < search_range[:-2]) & (mid < search_range[2:]))[0] + (tau_min + 1)
+                # Check endpoints
+                if search_range[0] < search_range[1]:
+                    min_indices = np.insert(min_indices, 0, tau_min)
+                if search_range[-1] < search_range[-2]:
+                    min_indices = np.append(min_indices, tau_max - 1)
+            else:
+                min_indices = np.array([np.argmin(search_range) + tau_min])
 
             if len(min_indices) == 0:
                 min_indices = np.array([np.argmin(search_range) + tau_min])
@@ -236,7 +257,7 @@ class PitchExtractor:
 
             # Compute FFT magnitude spectrum of windowed frame for harmonic verification
             fft_mag = np.abs(np.fft.rfft(frame * window, n=n_fft))
-            mag_sum = np.sum(fft_mag) + 1e-12
+            mag_sum = float(np.sum(fft_mag)) + 1e-12
             max_bin = len(fft_mag) - 1
 
             candidates: List[Dict[str, Any]] = []
@@ -266,7 +287,7 @@ class PitchExtractor:
                     if bin_idx <= max_bin:
                         b_start = max(0, bin_idx - 1)
                         b_end = min(max_bin + 1, bin_idx + 2)
-                        harm_energy += np.max(fft_mag[b_start:b_end]) / (h ** 0.5)
+                        harm_energy += _fast_slice_max(fft_mag, b_start, b_end) / (h ** 0.5)
 
                 harm_saliency = float(harm_energy / mag_sum)
 
@@ -274,8 +295,8 @@ class PitchExtractor:
                 # If cand_f is subharmonic (f0 / 2), the 2nd harmonic (true f0) will vastly dominate f1
                 f1_bin = int(round(cand_f * freq_bin_scale))
                 f2_bin = int(round(2.0 * cand_f * freq_bin_scale))
-                e_f1 = float(np.max(fft_mag[max(0, f1_bin - 1):min(max_bin + 1, f1_bin + 2)])) if f1_bin <= max_bin else 0.0
-                e_f2 = float(np.max(fft_mag[max(0, f2_bin - 1):min(max_bin + 1, f2_bin + 2)])) if f2_bin <= max_bin else 0.0
+                e_f1 = _fast_slice_max(fft_mag, max(0, f1_bin - 1), min(max_bin + 1, f1_bin + 2)) if f1_bin <= max_bin else 0.0
+                e_f2 = _fast_slice_max(fft_mag, max(0, f2_bin - 1), min(max_bin + 1, f2_bin + 2)) if f2_bin <= max_bin else 0.0
 
                 subharmonic_factor = 1.0
                 if e_f2 > 2.0 * (e_f1 + 1e-6) and cand_f < 180.0:

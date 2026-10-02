@@ -313,11 +313,16 @@ class TonicResolver:
         if len(pitch_freqs) >= 20:
             valid_p = pitch_freqs[(pitch_freqs >= self.MIN_TONIC_HZ) & (pitch_freqs <= self.MAX_TONIC_HZ)]
             if len(valid_p) >= 10:
-                hist, bin_edges = np.histogram(valid_p, bins=60)
-                peak_indices = signal.find_peaks(hist, height=max(3, int(len(valid_p) * 0.05)), distance=4)[0]
-                for p_idx in peak_indices:
-                    center_hz = float(0.5 * (bin_edges[p_idx] + bin_edges[p_idx + 1]))
-                    candidates.append((center_hz, "contour_peak"))
+                p_range = float(np.ptp(valid_p))
+                if p_range > 1.0:
+                    num_bins = min(60, max(5, int(p_range * 2)))
+                    hist, bin_edges = np.histogram(valid_p, bins=num_bins)
+                    peak_indices = signal.find_peaks(hist, height=max(3, int(len(valid_p) * 0.05)), distance=max(1, num_bins // 15))[0]
+                    for p_idx in peak_indices:
+                        center_hz = float(0.5 * (bin_edges[p_idx] + bin_edges[p_idx + 1]))
+                        candidates.append((center_hz, "contour_peak"))
+                elif len(valid_p) > 0:
+                    candidates.append((float(np.mean(valid_p)), "contour_peak"))
 
         # Deduplicate candidates within 30 cents
         deduped: List[Tuple[float, str]] = []

@@ -1,0 +1,640 @@
+{
+  "environment": {
+    "python_version": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "platform": "Windows-10-10.0.26300-SP0",
+    "processor": "Intel64 Family 6 Model 142 Stepping 12, GenuineIntel",
+    "machine": "AMD64",
+    "numpy_version": "2.4.6"
+  },
+  "input_audio": {
+    "path": "D:\\raga-rhythm-ai-composer-main\\saraga1.5_hindustani\\saraga1.5_hindustani\\Anaahata by Milind Malshe\\Raag Basanti Kedar\\Raag Basanti Kedar.mp3.mp3",
+    "sample_rate": 22050,
+    "samples": 220500,
+    "duration_seconds": 10.0
+  },
+  "cold_start": {
+    "timings": {
+      "preprocessing": 9.43,
+      "tonic_estimation": 1745.9,
+      "pitch_extraction": 66464.27,
+      "tonic_resolution": 228.37,
+      "swara_analysis": 3698.08,
+      "raga_detection": 56032.83,
+      "rhythm_analysis": 92.13,
+      "tala_classification": 1355.64,
+      "beat_tracking": 2207.11,
+      "total_end_to_end_ms": 131952.3,
+      "peak_memory_mb": 35.165
+    },
+    "raga": "Suha",
+    "tala": "Teentaal",
+    "tonic_hz": 277.67,
+    "bpm": 130.7,
+    "confidence": 0.654
+  },
+  "steady_state_runs": [
+    {
+      "timings": {
+        "preprocessing": 29.26,
+        "tonic_estimation": 2616.44,
+        "pitch_extraction": 115201.65,
+        "tonic_resolution": 119.57,
+        "swara_analysis": 2131.68,
+        "raga_detection": 82274.47,
+        "rhythm_analysis": 207.75,
+        "tala_classification": 2391.83,
+        "beat_tracking": 864.62,
+        "total_end_to_end_ms": 205892.53,
+        "peak_memory_mb": 35.156
+      },
+      "raga": "Suha",
+      "tala": "Teentaal",
+      "tonic_hz": 277.67,
+      "bpm": 130.7,
+      "confidence": 0.654
+    },
+    {
+      "timings": {
+        "preprocessing": 8.62,
+        "tonic_estimation": 1977.98,
+        "pitch_extraction": 85822.96,
+        "tonic_resolution": 100.51,
+        "swara_analysis": 2245.32,
+        "raga_detection": 45539.19,
+        "rhythm_analysis": 195.79,
+        "tala_classification": 3155.28,
+        "beat_tracking": 1232.28,
+        "total_end_to_end_ms": 140316.12,
+        "peak_memory_mb": 35.156
+      },
+      "raga": "Suha",
+      "tala": "Teentaal",
+      "tonic_hz": 277.67,
+      "bpm": 130.7,
+      "confidence": 0.654
+    }
+  ],
+  "steady_state_statistics": {
+    "preprocessing": {
+      "mean": 18.94,
+      "median": 18.94,
+      "min": 8.62,
+      "max": 29.26,
+      "std": 10.32
+    },
+    "tonic_estimation": {
+      "mean": 2297.21,
+      "median": 2297.21,
+      "min": 1977.98,
+      "max": 2616.44,
+      "std": 319.23
+    },
+    "pitch_extraction": {
+      "mean": 100512.3,
+      "median": 100512.3,
+      "min": 85822.96,
+      "max": 115201.65,
+      "std": 14689.34
+    },
+    "tonic_resolution": {
+      "mean": 110.04,
+      "median": 110.04,
+      "min": 100.51,
+      "max": 119.57,
+      "std": 9.53
+    },
+    "swara_analysis": {
+      "mean": 2188.5,
+      "median": 2188.5,
+      "min": 2131.68,
+      "max": 2245.32,
+      "std": 56.82
+    },
+    "raga_detection": {
+      "mean": 63906.83,
+      "median": 63906.83,
+      "min": 45539.19,
+      "max": 82274.47,
+      "std": 18367.64
+    },
+    "rhythm_analysis": {
+      "mean": 201.77,
+      "median": 201.77,
+      "min": 195.79,
+      "max": 207.75,
+      "std": 5.98
+    },
+    "tala_classification": {
+      "mean": 2773.56,
+      "median": 2773.56,
+      "min": 2391.83,
+      "max": 3155.28,
+      "std": 381.73
+    },
+    "beat_tracking": {
+      "mean": 1048.45,
+      "median": 1048.45,
+      "min": 864.62,
+      "max": 1232.28,
+      "std": 183.83
+    },
+    "total_end_to_end_ms": {
+      "mean": 173104.33,
+      "median": 173104.33,
+      "min": 140316.12,
+      "max": 205892.53,
+      "std": 32788.21
+    },
+    "peak_memory_mb": {
+      "mean": 35.16,
+      "median": 35.16,
+      "min": 35.16,
+      "max": 35.16,
+      "std": 0.0
+    }
+  },
+  "top_cumulative_functions": [
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\scripts\\profile_analysis_pipeline.py",
+      "line": 50,
+      "function": "run_single_benchmark",
+      "ncalls": 1,
+      "tottime_ms": 1.16,
+      "cumtime_ms": 49068.17
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\pipeline.py",
+      "line": 352,
+      "function": "process_waveform",
+      "ncalls": 1,
+      "tottime_ms": 3.92,
+      "cumtime_ms": 49060.9
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\pipeline.py",
+      "line": 397,
+      "function": "_process_preprocessed_audio",
+      "ncalls": 1,
+      "tottime_ms": 95.93,
+      "cumtime_ms": 49052.03
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\raga_detector.py",
+      "line": 1190,
+      "function": "detect",
+      "ncalls": 1,
+      "tottime_ms": 7.05,
+      "cumtime_ms": 24513.31
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\raga_detector.py",
+      "line": 1336,
+      "function": "_score_candidate",
+      "ncalls": 70,
+      "tottime_ms": 66.29,
+      "cumtime_ms": 24502.45
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
+      "line": 252,
+      "function": "match_raga_motifs",
+      "ncalls": 70,
+      "tottime_ms": 66.65,
+      "cumtime_ms": 24293.32
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
+      "line": 438,
+      "function": "_sliding_window_similarity",
+      "ncalls": 287,
+      "tottime_ms": 1868.66,
+      "cumtime_ms": 23856.73
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
+      "line": 476,
+      "function": "compute_sequence_similarity",
+      "ncalls": 87015,
+      "tottime_ms": 12890.12,
+      "cumtime_ms": 21985.25
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\pitch_extractor.py",
+      "line": 120,
+      "function": "extract",
+      "ncalls": 1,
+      "tottime_ms": 6210.94,
+      "cumtime_ms": 20933.17
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.min>",
+      "ncalls": 1369715,
+      "tottime_ms": 5772.6,
+      "cumtime_ms": 5772.6
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
+      "line": 3011,
+      "function": "max",
+      "ncalls": 61436,
+      "tottime_ms": 647.04,
+      "cumtime_ms": 5293.91
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
+      "line": 66,
+      "function": "_wrapreduction",
+      "ncalls": 66077,
+      "tottime_ms": 1826.45,
+      "cumtime_ms": 5100.29
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
+      "line": 493,
+      "function": "<listcomp>",
+      "ncalls": 87015,
+      "tottime_ms": 2757.22,
+      "cumtime_ms": 2757.22
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\scipy\\signal\\_signaltools.py",
+      "line": 104,
+      "function": "correlate",
+      "ncalls": 2192,
+      "tottime_ms": 115.49,
+      "cumtime_ms": 2751.45
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\lib\\_arraypad_impl.py",
+      "line": 546,
+      "function": "pad",
+      "ncalls": 4366,
+      "tottime_ms": 711.28,
+      "cumtime_ms": 2675.42
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'reduce' of 'numpy.ufunc' objects>",
+      "ncalls": 69779,
+      "tottime_ms": 2470.04,
+      "cumtime_ms": 2470.04
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\scipy\\signal\\_signaltools.py",
+      "line": 1377,
+      "function": "convolve",
+      "ncalls": 2194,
+      "tottime_ms": 243.22,
+      "cumtime_ms": 2118.39
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.max>",
+      "ncalls": 245485,
+      "tottime_ms": 1097.78,
+      "cumtime_ms": 1098.09
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\tonic_estimator.py",
+      "line": 107,
+      "function": "estimate",
+      "ncalls": 1,
+      "tottime_ms": 486.7,
+      "cumtime_ms": 1086.29
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\scipy\\signal\\_signaltools.py",
+      "line": 1236,
+      "function": "choose_conv_method",
+      "ncalls": 2194,
+      "tottime_ms": 143.09,
+      "cumtime_ms": 1030.27
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\tala_classifier.py",
+      "line": 408,
+      "function": "classify",
+      "ncalls": 1,
+      "tottime_ms": 2.51,
+      "cumtime_ms": 1005.61
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\beat_tracker.py",
+      "line": 304,
+      "function": "track",
+      "ncalls": 2,
+      "tottime_ms": 0.74,
+      "cumtime_ms": 957.13
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\beat_tracker.py",
+      "line": 170,
+      "function": "evaluate_tempo_hypotheses",
+      "ncalls": 2,
+      "tottime_ms": 1.6,
+      "cumtime_ms": 948.61
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\beat_tracker.py",
+      "line": 111,
+      "function": "_dp_track_beats_for_period",
+      "ncalls": 6,
+      "tottime_ms": 654.68,
+      "cumtime_ms": 942.63
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
+      "line": 3699,
+      "function": "mean",
+      "ncalls": 3274,
+      "tottime_ms": 127.0,
+      "cumtime_ms": 934.69
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
+      "line": 48,
+      "function": "_wrapfunc",
+      "ncalls": 18958,
+      "tottime_ms": 216.41,
+      "cumtime_ms": 918.07
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\scipy\\_lib\\array_api_compat\\numpy\\_aliases.py",
+      "line": 70,
+      "function": "asarray",
+      "ncalls": 15410,
+      "tottime_ms": 313.2,
+      "cumtime_ms": 863.92
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\fft\\_pocketfft.py",
+      "line": 324,
+      "function": "rfft",
+      "ncalls": 2242,
+      "tottime_ms": 54.78,
+      "cumtime_ms": 840.51
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
+      "line": 67,
+      "function": "<dictcomp>",
+      "ncalls": 66077,
+      "tottime_ms": 820.87,
+      "cumtime_ms": 820.87
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\_methods.py",
+      "line": 115,
+      "function": "_mean",
+      "ncalls": 3275,
+      "tottime_ms": 412.17,
+      "cumtime_ms": 810.15
+    }
+  ],
+  "top_selftime_functions": [
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
+      "line": 476,
+      "function": "compute_sequence_similarity",
+      "ncalls": 87015,
+      "tottime_ms": 12890.12,
+      "cumtime_ms": 21985.25
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\pitch_extractor.py",
+      "line": 120,
+      "function": "extract",
+      "ncalls": 1,
+      "tottime_ms": 6210.94,
+      "cumtime_ms": 20933.17
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.min>",
+      "ncalls": 1369715,
+      "tottime_ms": 5772.6,
+      "cumtime_ms": 5772.6
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
+      "line": 493,
+      "function": "<listcomp>",
+      "ncalls": 87015,
+      "tottime_ms": 2757.22,
+      "cumtime_ms": 2757.22
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'reduce' of 'numpy.ufunc' objects>",
+      "ncalls": 69779,
+      "tottime_ms": 2470.04,
+      "cumtime_ms": 2470.04
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\motif_matcher.py",
+      "line": 438,
+      "function": "_sliding_window_similarity",
+      "ncalls": 287,
+      "tottime_ms": 1868.66,
+      "cumtime_ms": 23856.73
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
+      "line": 66,
+      "function": "_wrapreduction",
+      "ncalls": 66077,
+      "tottime_ms": 1826.45,
+      "cumtime_ms": 5100.29
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.max>",
+      "ncalls": 245485,
+      "tottime_ms": 1097.78,
+      "cumtime_ms": 1098.09
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
+      "line": 67,
+      "function": "<dictcomp>",
+      "ncalls": 66077,
+      "tottime_ms": 820.87,
+      "cumtime_ms": 820.87
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\fft\\_pocketfft.py",
+      "line": 58,
+      "function": "_raw_fft",
+      "ncalls": 2242,
+      "tottime_ms": 768.89,
+      "cumtime_ms": 782.76
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\lib\\_arraypad_impl.py",
+      "line": 546,
+      "function": "pad",
+      "ncalls": 4366,
+      "tottime_ms": 711.28,
+      "cumtime_ms": 2675.42
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\beat_tracker.py",
+      "line": 111,
+      "function": "_dp_track_beats_for_period",
+      "ncalls": 6,
+      "tottime_ms": 654.68,
+      "cumtime_ms": 942.63
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
+      "line": 3011,
+      "function": "max",
+      "ncalls": 61436,
+      "tottime_ms": 647.04,
+      "cumtime_ms": 5293.91
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\lib\\_arraypad_impl.py",
+      "line": 87,
+      "function": "_pad_simple",
+      "ncalls": 4366,
+      "tottime_ms": 502.41,
+      "cumtime_ms": 706.24
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\tonic_estimator.py",
+      "line": 107,
+      "function": "estimate",
+      "ncalls": 1,
+      "tottime_ms": 486.7,
+      "cumtime_ms": 1086.29
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.round>",
+      "ncalls": 65916,
+      "tottime_ms": 441.89,
+      "cumtime_ms": 441.89
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\_methods.py",
+      "line": 115,
+      "function": "_mean",
+      "ncalls": 3275,
+      "tottime_ms": 412.17,
+      "cumtime_ms": 810.15
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method numpy.array>",
+      "ncalls": 26919,
+      "tottime_ms": 352.59,
+      "cumtime_ms": 485.39
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\scipy\\_lib\\array_api_compat\\numpy\\_aliases.py",
+      "line": 70,
+      "function": "asarray",
+      "ncalls": 15410,
+      "tottime_ms": 313.2,
+      "cumtime_ms": 863.92
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\scipy\\signal\\_signaltools.py",
+      "line": 1080,
+      "function": "_conv_ops",
+      "ncalls": 2194,
+      "tottime_ms": 306.11,
+      "cumtime_ms": 391.35
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\lib\\_arraypad_impl.py",
+      "line": 471,
+      "function": "_as_pairs",
+      "ncalls": 6549,
+      "tottime_ms": 303.75,
+      "cumtime_ms": 652.27
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.len>",
+      "ncalls": 227099,
+      "tottime_ms": 284.32,
+      "cumtime_ms": 284.32
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.sorted>",
+      "ncalls": 2329,
+      "tottime_ms": 263.06,
+      "cumtime_ms": 389.77
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\lib\\_arraypad_impl.py",
+      "line": 130,
+      "function": "_set_pad_area",
+      "ncalls": 4366,
+      "tottime_ms": 256.66,
+      "cumtime_ms": 312.8
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\scipy\\signal\\_signaltools.py",
+      "line": 1377,
+      "function": "convolve",
+      "ncalls": 2194,
+      "tottime_ms": 243.22,
+      "cumtime_ms": 2118.39
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'cumsum' of 'numpy.ndarray' objects>",
+      "ncalls": 4364,
+      "tottime_ms": 222.65,
+      "cumtime_ms": 222.65
+    },
+    {
+      "file": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py",
+      "line": 48,
+      "function": "_wrapfunc",
+      "ncalls": 18958,
+      "tottime_ms": 216.41,
+      "cumtime_ms": 918.07
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'items' of 'dict' objects>",
+      "ncalls": 66473,
+      "tottime_ms": 201.61,
+      "cumtime_ms": 201.61
+    },
+    {
+      "file": "D:\\raga-rhythm-ai-composer-main\\backend\\app\\analysis\\swara_analyzer.py",
+      "line": 137,
+      "function": "analyze",
+      "ncalls": 1,
+      "tottime_ms": 200.33,
+      "cumtime_ms": 727.51
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method numpy._core._multiarray_umath.correlate>",
+      "ncalls": 2194,
+      "tottime_ms": 191.23,
+      "cumtime_ms": 191.23
+    }
+  ]
+}

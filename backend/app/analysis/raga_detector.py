@@ -1152,6 +1152,29 @@ class RagaAnalysisResult(BaseModel):
         }
 
 
+# Precomputed template vectors and metadata for fast O(1) scoring
+_PRECOMPUTED_PCD_TEMPLATES: Dict[str, Tuple[np.ndarray, float]] = {}
+_PRECOMPUTED_RAGA_SWARAS: Dict[str, Tuple[set[str], set[str], set[Tuple[str, str]]]] = {}
+
+for _r_id, _r_meta in RAGA_KNOWLEDGE_BASE.items():
+    _tpl = _r_meta.get("pcd_template", {})
+    _vec = np.array([_tpl.get(sym, 0.0) for sym in ALL_SWARA_SYMBOLS], dtype=np.float64)
+    _vec = np.nan_to_num(_vec, nan=0.0, posinf=0.0, neginf=0.0)
+    _norm = float(np.linalg.norm(_vec))
+    _PRECOMPUTED_PCD_TEMPLATES[_r_id] = (_vec, _norm)
+
+    _swaras = set(_r_meta.get("swaras", []))
+    _varjit = set(_r_meta.get("varjit", []))
+    _aroha = _r_meta.get("aroha", [])
+    _avaroha = _r_meta.get("avaroha", [])
+    _trans = set()
+    for _i in range(len(_aroha) - 1):
+        _trans.add((_aroha[_i], _aroha[_i + 1]))
+    for _i in range(len(_avaroha) - 1):
+        _trans.add((_avaroha[_i], _avaroha[_i + 1]))
+    _PRECOMPUTED_RAGA_SWARAS[_r_id] = (_swaras, _varjit, _trans)
+
+
 # ============================================================================
 # RagaDetector Engine Implementation
 # ============================================================================
@@ -1264,6 +1287,12 @@ class RagaDetector:
         # Active swaras in observed performance (prominence > 1.5%)
         active_swaras = {sym for sym, weight in pcd.items() if weight >= 0.015 and sym in ALL_SWARA_SYMBOLS}
 
+        # Precompute observed PCD vector and norm once for all candidates
+        vec_obs = np.array([pcd.get(sym, 0.0) for sym in ALL_SWARA_SYMBOLS], dtype=np.float64)
+        vec_obs = np.nan_to_num(vec_obs, nan=0.0, posinf=0.0, neginf=0.0)
+        norm_obs = float(np.linalg.norm(vec_obs))
+        precalc_obs = (vec_obs, norm_obs)
+
         # Evaluate every candidate raga in Knowledge Base
         candidates: List[RagaCandidate] = []
         for raga_id, raga_meta in self.knowledge_base.items():
@@ -1275,6 +1304,7 @@ class RagaDetector:
                 dominant_swaras=dominant_swaras,
                 segment_symbols=segment_symbols,
                 observed_transitions=observed_transitions,
+                precalc_obs=precalc_obs,
             )
             candidates.append(candidate)
 
@@ -1342,12 +1372,24 @@ class RagaDetector:
         dominant_swaras: List[str],
         segment_symbols: List[str],
         observed_transitions: set[Tuple[str, str]],
+        precalc_obs: Optional[Tuple[np.ndarray, float]] = None,
     ) -> RagaCandidate:
         """
         Decomposable scoring logic for an individual raga candidate.
         """
-        raga_swaras = set(raga_meta.get("swaras", []))
-        varjit_swaras = set(raga_meta.get("varjit", []))
+        if raga_id in _PRECOMPUTED_RAGA_SWARAS:
+            raga_swaras, varjit_swaras, expected_transitions = _PRECOMPUTED_RAGA_SWARAS[raga_id]
+        else:
+            raga_swaras = set(raga_meta.get("swaras", []))
+            varjit_swaras = set(raga_meta.get("varjit", []))
+            raga_aroha = raga_meta.get("aroha", [])
+            raga_avaroha = raga_meta.get("avaroha", [])
+            expected_transitions = set()
+            for i in range(len(raga_aroha) - 1):
+                expected_transitions.add((raga_aroha[i], raga_aroha[i + 1]))
+            for i in range(len(raga_avaroha) - 1):
+                expected_transitions.add((raga_avaroha[i], raga_avaroha[i + 1]))
+
         vadi = raga_meta.get("vadi", "")
         samvadi = raga_meta.get("samvadi", "")
         pcd_template = raga_meta.get("pcd_template", {})
@@ -1380,7 +1422,7 @@ class RagaDetector:
             missing_features.append(f"Missing expected swaras: {sorted(list(missing_in_perf))}")
 
         # 2. PCD Cosine Similarity (0.0 to 1.0)
-        score_pcd = self._cosine_similarity(pcd, pcd_template)
+        score_pcd = self._cosine_similarity(pcd, pcd_template, raga_id=raga_id, precalc_obs=precalc_obs)
         if score_pcd > 0.75:
             matched_features.append(f"High PCD profile correlation ({score_pcd*100:.1f}%)")
 
@@ -1408,15 +1450,6 @@ class RagaDetector:
 
         # 4. Aroha / Avaroha Scale Transitions Score (0.0 to 1.0)
         score_scale = 0.0
-        raga_aroha = raga_meta.get("aroha", [])
-        raga_avaroha = raga_meta.get("avaroha", [])
-
-        expected_transitions = set()
-        for i in range(len(raga_aroha) - 1):
-            expected_transitions.add((raga_aroha[i], raga_aroha[i + 1]))
-        for i in range(len(raga_avaroha) - 1):
-            expected_transitions.add((raga_avaroha[i], raga_avaroha[i + 1]))
-
         if expected_transitions:
             matched_trans = expected_transitions.intersection(observed_transitions)
             score_scale = min(1.0, len(matched_trans) / max(1, len(expected_transitions) * 0.5))
@@ -1472,25 +1505,41 @@ class RagaDetector:
             mood=raga_meta.get("mood", "Unknown"),
         )
 
-    def _cosine_similarity(self, obs_pcd: Dict[str, float], template_pcd: Dict[str, float]) -> float:
+    def _cosine_similarity(
+        self,
+        obs_pcd: Dict[str, float],
+        template_pcd: Dict[str, float],
+        raga_id: Optional[str] = None,
+        precalc_obs: Optional[Tuple[np.ndarray, float]] = None,
+    ) -> float:
         """Computes cosine similarity between 12-dimensional pitch vectors."""
-        if not obs_pcd or not template_pcd:
+        if not obs_pcd:
             return 0.0
 
-        vec_obs = np.array([obs_pcd.get(sym, 0.0) for sym in ALL_SWARA_SYMBOLS], dtype=np.float64)
-        vec_tpl = np.array([template_pcd.get(sym, 0.0) for sym in ALL_SWARA_SYMBOLS], dtype=np.float64)
+        if precalc_obs is not None:
+            vec_obs, norm_obs = precalc_obs
+        else:
+            vec_obs = np.array([obs_pcd.get(sym, 0.0) for sym in ALL_SWARA_SYMBOLS], dtype=np.float64)
+            vec_obs = np.nan_to_num(vec_obs, nan=0.0, posinf=0.0, neginf=0.0)
+            norm_obs = float(np.linalg.norm(vec_obs))
 
-        vec_obs = np.nan_to_num(vec_obs, nan=0.0, posinf=0.0, neginf=0.0)
-        vec_tpl = np.nan_to_num(vec_tpl, nan=0.0, posinf=0.0, neginf=0.0)
-
-        norm_obs = np.linalg.norm(vec_obs)
-        norm_tpl = np.linalg.norm(vec_tpl)
-
-        if norm_obs < 1e-9 or norm_tpl < 1e-9:
+        if norm_obs < 1e-9:
             return 0.0
 
-        dot = np.dot(vec_obs, vec_tpl)
-        sim = float(dot / (norm_obs * norm_tpl))
+        if raga_id and raga_id in _PRECOMPUTED_PCD_TEMPLATES:
+            vec_tpl, norm_tpl = _PRECOMPUTED_PCD_TEMPLATES[raga_id]
+        else:
+            if not template_pcd:
+                return 0.0
+            vec_tpl = np.array([template_pcd.get(sym, 0.0) for sym in ALL_SWARA_SYMBOLS], dtype=np.float64)
+            vec_tpl = np.nan_to_num(vec_tpl, nan=0.0, posinf=0.0, neginf=0.0)
+            norm_tpl = float(np.linalg.norm(vec_tpl))
+
+        if norm_tpl < 1e-9:
+            return 0.0
+
+        dot = float(np.dot(vec_obs, vec_tpl))
+        sim = dot / (norm_obs * norm_tpl)
         if np.isnan(sim) or np.isinf(sim):
             return 0.0
         return float(np.clip(sim, 0.0, 1.0))

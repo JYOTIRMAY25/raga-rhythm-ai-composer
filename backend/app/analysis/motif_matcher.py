@@ -85,11 +85,17 @@ class MelodicPhraseParser:
     - Stripping invalid non-swara characters (punctuation, numbers, whitespace)
     """
 
+    _CACHE: Dict[Any, ParsedMelodicMotif] = {}
+
     @classmethod
     def parse_motif(cls, phrase_str: Union[str, Sequence[str]]) -> ParsedMelodicMotif:
         """
         Parses a raw phrase string or sequence into a structured ParsedMelodicMotif.
         """
+        cache_key = tuple(phrase_str) if isinstance(phrase_str, (list, tuple)) else str(phrase_str)
+        if cache_key in cls._CACHE:
+            return cls._CACHE[cache_key]
+
         if isinstance(phrase_str, (list, tuple)):
             raw = " ".join(str(s) for s in phrase_str)
             tokens: List[str] = []
@@ -119,7 +125,7 @@ class MelodicPhraseParser:
         bigrams = [(valid_tokens[i], valid_tokens[i + 1]) for i in range(len(valid_tokens) - 1)]
         trigrams = [(valid_tokens[i], valid_tokens[i + 1], valid_tokens[i + 2]) for i in range(len(valid_tokens) - 2)]
 
-        return ParsedMelodicMotif(
+        res = ParsedMelodicMotif(
             raw_text=raw,
             swaras=valid_tokens,
             length=len(valid_tokens),
@@ -127,6 +133,8 @@ class MelodicPhraseParser:
             trigrams=trigrams,
             is_valid=is_valid,
         )
+        cls._CACHE[cache_key] = res
+        return res
 
     @classmethod
     def _normalize_char(cls, char: str) -> str:
@@ -457,12 +465,21 @@ class MelodicMotifMatcher:
         best_pos = None
         best_sub = None
 
+        target_set = set(target_swaras)
+
         # Check window sizes m - 1, m, m + 1
         for w_len in (m - 1, m, m + 1):
             if w_len < 1 or w_len > n:
                 continue
             for i in range(0, n - w_len + 1):
                 window = stream_swaras[i : i + w_len]
+                if window == target_swaras:
+                    return 1.0, i, " ".join(window)
+
+                # Fast overlap filter: if overlap between unique swaras is zero or too low, skip DP
+                if len(target_set.intersection(window)) < max(1, m - 2):
+                    continue
+
                 sim = cls.compute_sequence_similarity(target_swaras, window)
                 if sim > best_sim:
                     best_sim = sim
@@ -488,26 +505,29 @@ class MelodicMotifMatcher:
             return 1.0
         if len_a == 0 or len_b == 0:
             return 0.0
+        if seq_a == seq_b:
+            return 1.0
 
-        # Dynamic programming Levenshtein table
-        dp = [[0] * (len_b + 1) for _ in range(len_a + 1)]
-        for i in range(len_a + 1):
-            dp[i][0] = i
-        for j in range(len_b + 1):
-            dp[0][j] = j
-
+        # Memory-efficient 2-row Levenshtein calculation
+        prev = list(range(len_b + 1))
+        curr = [0] * (len_b + 1)
         for i in range(1, len_a + 1):
+            char_a = seq_a[i - 1]
+            curr[0] = i
             for j in range(1, len_b + 1):
-                if seq_a[i - 1] == seq_b[j - 1]:
-                    dp[i][j] = dp[i - 1][j - 1]
+                cost = 0 if char_a == seq_b[j - 1] else 1
+                del_c = prev[j] + 1
+                ins_c = curr[j - 1] + 1
+                sub_c = prev[j - 1] + cost
+                if del_c <= ins_c and del_c <= sub_c:
+                    curr[j] = del_c
+                elif ins_c <= sub_c:
+                    curr[j] = ins_c
                 else:
-                    dp[i][j] = 1 + min(
-                        dp[i - 1][j],     # deletion
-                        dp[i][j - 1],     # insertion
-                        dp[i - 1][j - 1], # substitution
-                    )
+                    curr[j] = sub_c
+            prev, curr = curr, prev
 
-        dist = dp[len_a][len_b]
+        dist = prev[len_b]
         max_len = max(len_a, len_b)
         sim = max(0.0, 1.0 - (dist / max_len))
         return float(sim)
