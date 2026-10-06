@@ -29,6 +29,9 @@ from .analysis import (
     TalaResultSchema,
     AnalysisWarningSchema,
     AnalysisResponse,
+    JobErrorSchema,
+    AnalysisJobStatusResponse,
+    AnalysisJobCancelResponse,
 )
 from .generation import (
     GenerationRequest,
@@ -57,7 +60,11 @@ __all__ = [
     "TalaResultSchema",
     "AnalysisWarningSchema",
     "AnalysisResponse",
+    "JobErrorSchema",
+    "AnalysisJobStatusResponse",
+    "AnalysisJobCancelResponse",
     "GenerationRequest",
     "GenerationResponse",
     "GenerationSummaryItem",
 ]
+

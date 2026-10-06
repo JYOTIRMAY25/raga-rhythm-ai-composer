@@ -94,9 +94,27 @@ export const musicService = {
     return styles.find((style) => style.id === id);
   },
 
-  // Real synchronous audio analysis via POST /api/v1/analyze
+  // Asynchronous audio analysis polling via POST /api/v1/analyze & GET /api/v1/analysis/{id}
   analyzeAudio: async (audioFile: File): Promise<AnalysisResponse> => {
-    return await api.analyzeAudio(audioFile);
+    const job = await api.analyzeAudio(audioFile);
+    if (job.status === "COMPLETED" && job.result) {
+      return job.result;
+    }
+    let currentJob = job;
+    while (currentJob.status === "QUEUED" || currentJob.status === "PROCESSING") {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      currentJob = await api.getAnalysisJob(job.job_id);
+    }
+    if (currentJob.status === "COMPLETED" && currentJob.result) {
+      return currentJob.result;
+    }
+    if (currentJob.status === "FAILED") {
+      throw new Error(currentJob.error?.message || "Analysis failed.");
+    }
+    if (currentJob.status === "CANCELLED") {
+      throw new Error("Analysis was cancelled.");
+    }
+    throw new Error("Analysis ended in an unexpected state.");
   },
 
   // Real algorithmic composition generation via POST /api/v1/generate

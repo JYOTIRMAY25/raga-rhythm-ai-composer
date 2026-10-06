@@ -84,6 +84,32 @@ class ResourceNotFoundError(APIError):
         )
 
 
+class JobNotFoundError(ResourceNotFoundError):
+    """Raised when an analysis job ID is not found."""
+
+    def __init__(self, message: str = "Analysis job not found.") -> None:
+        super().__init__(
+            message=message,
+            error_code="JOB_NOT_FOUND",
+        )
+
+
+class JobQueueFullError(APIError):
+    """Raised when the analysis worker queue is at maximum capacity."""
+
+    def __init__(self, message: str = "Analysis queue is full. Please retry shortly.") -> None:
+        super().__init__(
+            message=message,
+            error_code="JOB_QUEUE_FULL",
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+
+class JobCancelledException(Exception):
+    """Internal exception raised when an in-flight job observes cooperative cancellation."""
+    pass
+
+
 class NotImplementedAPIError(APIError):
     """Raised for documented endpoints planned for future release."""
 

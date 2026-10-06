@@ -212,6 +212,32 @@ export interface AnalysisResponse {
   created_at: string;
 }
 
+export type AnalysisJobStatus = "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED";
+
+export interface JobErrorDetail {
+  code: string;
+  message: string;
+}
+
+export interface AnalysisJobResponse {
+  job_id: string;
+  status: AnalysisJobStatus;
+  progress: number;
+  current_stage: string;
+  created_at: string;
+  started_at?: string | null;
+  completed_at?: string | null;
+  result?: AnalysisResponse | null;
+  error?: JobErrorDetail | null;
+}
+
+export interface AnalysisJobCancelResponse {
+  job_id: string;
+  status: AnalysisJobStatus;
+  message: string;
+}
+
+
 export interface GeminiAnalysisExplanation {
   available: boolean;
   summary: string;

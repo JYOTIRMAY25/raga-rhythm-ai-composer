@@ -160,3 +160,76 @@ async def save_upload_temporarily(
                 temp_file_path.unlink()
             except Exception:
                 pass
+
+
+async def save_upload_to_storage(
+    upload_file: UploadFile,
+    max_bytes: int = settings.max_upload_bytes,
+) -> Tuple[Path, str, int]:
+    """
+    Securely streams and saves an UploadFile to an ephemeral UUID temporary file for async processing.
+    Validates file size ceiling and audio magic bytes.
+    The caller or background worker is responsible for unlinking temp_file_path upon job termination.
+
+    Returns:
+        (temp_file_path, sanitized_original_filename, total_bytes_written)
+    """
+    sanitized_filename = sanitize_client_filename(upload_file.filename)
+    ext = validate_file_extension(sanitized_filename)
+
+    # Generate isolated random UUID temporary file
+    temp_dir = Path(tempfile.gettempdir()) / "ragarhythm_uploads"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    temp_file_path = temp_dir / f"job_{uuid.uuid4().hex}{ext}"
+
+    total_bytes = 0
+    header_bytes = bytearray()
+    header_checked = False
+
+    try:
+        with open(temp_file_path, "wb") as f_out:
+            while True:
+                chunk = await upload_file.read(64 * 1024)  # 64 KB chunks
+                if not chunk:
+                    break
+
+                total_bytes += len(chunk)
+
+                # Check max upload limit
+                if total_bytes > max_bytes:
+                    raise FileSizeExceededError(
+                        f"Upload payload ({total_bytes} bytes) exceeds maximum limit of {max_bytes} bytes (25 MB)."
+                    )
+
+                # Collect initial bytes for magic header verification
+                if not header_checked:
+                    header_bytes.extend(chunk[: 64 - len(header_bytes)])
+                    if len(header_bytes) >= 32:
+                        if not verify_audio_magic_bytes(bytes(header_bytes)):
+                            raise AudioValidationError(
+                                "Invalid audio file header. The uploaded file does not appear to be a valid audio recording."
+                            )
+                        header_checked = True
+
+                f_out.write(chunk)
+
+        # Handle empty files
+        if total_bytes == 0:
+            raise EmptyFileError("Uploaded file is empty (0 bytes).")
+
+        # Header check for very small files (<32 bytes)
+        if not header_checked and not verify_audio_magic_bytes(bytes(header_bytes)):
+            raise AudioValidationError(
+                "Invalid or corrupted audio file header."
+            )
+
+        return temp_file_path, sanitized_filename, total_bytes
+
+    except Exception:
+        if temp_file_path.exists():
+            try:
+                temp_file_path.unlink()
+            except Exception:
+                pass
+        raise
+

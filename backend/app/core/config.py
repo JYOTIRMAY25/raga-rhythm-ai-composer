@@ -63,5 +63,11 @@ class Settings(BaseModel):
         "application/octet-stream",
     }
 
+    # Async Analysis Job Configuration
+    max_analysis_workers: int = 4
+    max_queued_jobs: int = 50
+    job_retention_seconds: int = 3600  # 1 hour
+    max_retained_jobs: int = 1000
+
 
 settings = Settings()

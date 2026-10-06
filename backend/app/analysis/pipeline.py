@@ -31,11 +31,12 @@ import logging
 import math
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.app.core.exceptions import JobCancelledException
 from .preprocessor import (
     AudioPreprocessor,
     AudioPreprocessingResult,
@@ -319,10 +320,37 @@ class AnalysisPipeline:
         self.beat_tracker = beat_tracker or BeatTracker()
         self.tala_classifier = tala_classifier or TalaClassifier()
 
+    @staticmethod
+    def _report_progress(
+        callback: Optional[Callable[[int, str], None]],
+        progress: int,
+        stage: str,
+    ) -> None:
+        """Safely invokes progress callback without interrupting analysis if it fails."""
+        if callback is not None:
+            try:
+                callback(progress, stage)
+            except Exception as e:
+                logger.warning(f"Progress callback failed: {e}")
+
+    @staticmethod
+    def _check_cancellation(cancellation_check: Optional[Callable[[], bool]]) -> None:
+        """Checks if cancellation was requested and raises JobCancelledException at safe stage boundaries."""
+        if cancellation_check is not None:
+            try:
+                if cancellation_check():
+                    raise JobCancelledException("Analysis cancelled by client request.")
+            except JobCancelledException:
+                raise
+            except Exception as e:
+                logger.warning(f"Cancellation check error: {e}")
+
     def process_file(
         self,
         file_path: Union[str, Path],
         max_downsampled_points: int = 150,
+        progress_callback: Optional[Callable[[int, str], None]] = None,
+        cancellation_check: Optional[Callable[[], bool]] = None,
     ) -> UnifiedAnalysisResult:
         """
         Executes the unified analysis pipeline on a given audio file path.
@@ -330,6 +358,9 @@ class AnalysisPipeline:
         start_total = time.perf_counter()
         stage_timings: Dict[str, float] = {}
         warnings: List[PipelineWarning] = []
+
+        self._check_cancellation(cancellation_check)
+        self._report_progress(progress_callback, 5, "Audio preprocessing")
 
         # --------------------------------------------------------------------
         # Stage 1: Audio Preprocessing
@@ -347,6 +378,8 @@ class AnalysisPipeline:
             stage_timings=stage_timings,
             warnings=warnings,
             max_downsampled_points=max_downsampled_points,
+            progress_callback=progress_callback,
+            cancellation_check=cancellation_check,
         )
 
     def process_waveform(
@@ -355,6 +388,8 @@ class AnalysisPipeline:
         sample_rate: int = 22050,
         filename: str = "waveform_input.wav",
         max_downsampled_points: int = 150,
+        progress_callback: Optional[Callable[[int, str], None]] = None,
+        cancellation_check: Optional[Callable[[], bool]] = None,
     ) -> UnifiedAnalysisResult:
         """
         Executes the unified analysis pipeline on an in-memory waveform.
@@ -362,6 +397,9 @@ class AnalysisPipeline:
         start_total = time.perf_counter()
         stage_timings: Dict[str, float] = {}
         warnings: List[PipelineWarning] = []
+
+        self._check_cancellation(cancellation_check)
+        self._report_progress(progress_callback, 5, "Audio preprocessing")
 
         t0 = time.perf_counter()
         orig_channels = 1 if waveform.ndim == 1 else waveform.shape[1] if waveform.ndim == 2 else 1
@@ -392,6 +430,8 @@ class AnalysisPipeline:
             stage_timings=stage_timings,
             warnings=warnings,
             max_downsampled_points=max_downsampled_points,
+            progress_callback=progress_callback,
+            cancellation_check=cancellation_check,
         )
 
     def _process_preprocessed_audio(
@@ -403,6 +443,8 @@ class AnalysisPipeline:
         stage_timings: Dict[str, float],
         warnings: List[PipelineWarning],
         max_downsampled_points: int,
+        progress_callback: Optional[Callable[[int, str], None]] = None,
+        cancellation_check: Optional[Callable[[], bool]] = None,
     ) -> UnifiedAnalysisResult:
         """Internal worker executing downstream stages after preprocessing."""
 
@@ -440,6 +482,9 @@ class AnalysisPipeline:
         # --------------------------------------------------------------------
         # Stage 2: Tonic Estimation (Sa Baseline)
         # --------------------------------------------------------------------
+        self._check_cancellation(cancellation_check)
+        self._report_progress(progress_callback, 15, "Tonic estimation")
+
         t0 = time.perf_counter()
         tonic_est: TonicEstimationResult = self.tonic_estimator.estimate(
             pre_res.waveform,
@@ -450,6 +495,9 @@ class AnalysisPipeline:
         # --------------------------------------------------------------------
         # Stage 3: Continuous Pitch Extraction (YIN)
         # --------------------------------------------------------------------
+        self._check_cancellation(cancellation_check)
+        self._report_progress(progress_callback, 30, "Pitch extraction")
+
         t0 = time.perf_counter()
         pitch_res: PitchExtractionResult = self.pitch_extractor.extract(
             pre_res.waveform,
@@ -461,6 +509,9 @@ class AnalysisPipeline:
         # --------------------------------------------------------------------
         # Stage 4: Multi-Candidate Tonic Resolution
         # --------------------------------------------------------------------
+        self._check_cancellation(cancellation_check)
+        self._report_progress(progress_callback, 50, "Tonic resolution")
+
         t0 = time.perf_counter()
         tonic_res: TonicResolutionResult = self.tonic_resolver.resolve(
             waveform=pre_res.waveform,
@@ -536,6 +587,9 @@ class AnalysisPipeline:
         # --------------------------------------------------------------------
         # Stage 5: Swara Analysis & Mapping
         # --------------------------------------------------------------------
+        self._check_cancellation(cancellation_check)
+        self._report_progress(progress_callback, 60, "Swara analysis")
+
         t0 = time.perf_counter()
         swara_res: SwaraAnalysisResult = self.swara_analyzer.analyze(
             pitch_result=pitch_res,
@@ -574,6 +628,9 @@ class AnalysisPipeline:
         # --------------------------------------------------------------------
         # Stage 6: Raga Detection & Melodic Motif Matching
         # --------------------------------------------------------------------
+        self._check_cancellation(cancellation_check)
+        self._report_progress(progress_callback, 70, "Raga detection")
+
         t0 = time.perf_counter()
         raga_res: RagaAnalysisResult = self.raga_detector.detect(
             swara_result=swara_res,
@@ -655,6 +712,9 @@ class AnalysisPipeline:
         # --------------------------------------------------------------------
         # Stage 7: Rhythm Feature Extraction (Novelty & Tempo)
         # --------------------------------------------------------------------
+        self._check_cancellation(cancellation_check)
+        self._report_progress(progress_callback, 80, "Rhythm / beat analysis")
+
         t0 = time.perf_counter()
         rhythm_features: RhythmFeatures = self.rhythm_analyzer.analyze(
             waveform=pre_res.waveform,
@@ -674,6 +734,9 @@ class AnalysisPipeline:
         # --------------------------------------------------------------------
         # Stage 8: Tala Classification & Beat Grid Tracking
         # --------------------------------------------------------------------
+        self._check_cancellation(cancellation_check)
+        self._report_progress(progress_callback, 90, "Tala classification")
+
         t0 = time.perf_counter()
         tala_res: TalaClassificationResult = self.tala_classifier.classify(rhythm_features)
         stage_timings["tala_classification"] = round((time.perf_counter() - t0) * 1000.0, 2)
@@ -684,6 +747,9 @@ class AnalysisPipeline:
             cycle_length=tala_res.predicted_matras,
         )
         stage_timings["beat_tracking"] = round((time.perf_counter() - t0) * 1000.0, 2)
+
+        self._check_cancellation(cancellation_check)
+        self._report_progress(progress_callback, 98, "Finalization")
 
         # Tala Candidates
         tala_cands_payload: List[PipelineTalaCandidate] = []

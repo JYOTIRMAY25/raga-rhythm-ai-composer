@@ -7,7 +7,7 @@
 
 ## 1. POST `/api/v1/analyze`
 
-Uploads an audio file for Indian classical music feature extraction, raga detection, and rhythm analysis.
+Uploads an audio file for asynchronous Indian classical music feature extraction, raga detection, and rhythm analysis. Returns an unpredictable `job_id` with `QUEUED` or `PROCESSING` status immediately.
 
 ### Request
 - **Content-Type**: `multipart/form-data`
@@ -17,18 +17,20 @@ Uploads an audio file for Indian classical music feature extraction, raga detect
 ### Processing Flow
 1. Stream file chunks verifying total payload size does not exceed 25 MB.
 2. Verify MIME type and audio magic bytes.
-3. Generate UUID4 `analysis_id` and persist file to ephemeral scratch storage.
-4. Enqueue DSP analysis task (Audio preprocessing → Tonic estimation → Pitch extraction → Swara analysis → Raga classification → Tala extraction).
-5. Return initial job record with status `processing` or synchronous result.
+3. Generate unpredictable UUID4 `job_id` and persist file to isolated ephemeral temporary storage.
+4. Enqueue DSP analysis task in bounded `ThreadPoolExecutor` worker pool.
+5. Return initial job status response quickly without blocking for DSP completion.
 
-### Response (202 Accepted / 200 OK)
+### Response (202 Accepted)
 ```json
 {
-  "analysis_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
-  "status": "processing",
-  "progress_percentage": 10,
-  "current_stage": "preprocessing",
-  "created_at": "2026-09-27T11:15:00Z"
+  "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "status": "QUEUED",
+  "progress": 0,
+  "current_stage": "Queued",
+  "created_at": "2026-10-06T11:15:00.000000+00:00",
+  "started_at": null,
+  "completed_at": null
 }
 ```
 
@@ -36,21 +38,41 @@ Uploads an audio file for Indian classical music feature extraction, raga detect
 - `400 Bad Request`: `INVALID_AUDIO_FORMAT` — Unsupported MIME type or corrupted header.
 - `413 Payload Too Large`: `FILE_SIZE_EXCEEDED` — Upload exceeds 25 MB limit.
 - `422 Unprocessable Entity`: `EMPTY_FILE` — Zero-byte upload payload.
+- `429 Too Many Requests`: `QUEUE_FULL` — Active job capacity reached.
 
 ---
 
-## 2. GET `/api/v1/analysis/{analysis_id}`
+## 2. GET `/api/v1/analysis/{job_id}`
 
-Retrieves the status, progress, and complete musical analysis result for a given recording.
+Retrieves the current execution state, monotonic progress (0–100%), stage name, or final completed analysis result.
 
 ### Request
-- **Path Parameter**: `analysis_id` (UUID4 string)
+- **Path Parameter**: `job_id` (UUID4 string)
+
+### Response (200 OK — In Progress)
+```json
+{
+  "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "status": "PROCESSING",
+  "progress": 42,
+  "current_stage": "Pitch extraction",
+  "created_at": "2026-10-06T11:15:00.000000+00:00",
+  "started_at": "2026-10-06T11:15:00.050000+00:00",
+  "completed_at": null
+}
+```
 
 ### Response (200 OK — Completed)
 ```json
 {
-  "analysis_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
-  "status": "completed",
+  "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "status": "COMPLETED",
+  "progress": 100,
+  "current_stage": "Completed",
+  "created_at": "2026-10-06T11:15:00.000000+00:00",
+  "started_at": "2026-10-06T11:15:00.050000+00:00",
+  "completed_at": "2026-10-06T11:15:08.200000+00:00",
+  "result": {
   "audio_metadata": {
     "filename": "bhairavi_alaap.wav",
     "duration_seconds": 124.5,
@@ -103,16 +125,68 @@ Retrieves the status, progress, and complete musical analysis result for a given
     "onset_strengths": [0.12, 0.85, 0.34, 0.78]
   },
   "ai_explanation": "This performance exhibits prominent emphasis on Komal Re and Komal Ga, with microtonal glides (meend) typical of morning Raga Bhairavi in slow tempo."
+  }
+}
+```
+
+### Response (200 OK — Failed)
+```json
+{
+  "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "status": "FAILED",
+  "progress": 35,
+  "current_stage": "Pitch extraction",
+  "created_at": "2026-10-06T11:15:00.000000+00:00",
+  "started_at": "2026-10-06T11:15:00.050000+00:00",
+  "completed_at": "2026-10-06T11:15:02.100000+00:00",
+  "error": {
+    "code": "ANALYSIS_FAILED",
+    "message": "Audio signal too short or degraded for pitch extraction"
+  }
+}
+```
+
+### Response (200 OK — Cancelled)
+```json
+{
+  "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "status": "CANCELLED",
+  "progress": 20,
+  "current_stage": "Tonic estimation",
+  "created_at": "2026-10-06T11:15:00.000000+00:00",
+  "started_at": "2026-10-06T11:15:00.050000+00:00",
+  "completed_at": "2026-10-06T11:15:01.500000+00:00"
 }
 ```
 
 ### Error Responses
-- `404 Not Found`: `ANALYSIS_NOT_FOUND` — Specified analysis ID does not exist or has expired.
-- `500 Internal Server Error`: `ANALYSIS_FAILED` — DSP extraction error with safe error message.
+- `404 Not Found`: `JOB_NOT_FOUND` — Specified job ID does not exist, was cancelled, or has expired.
 
 ---
 
-## 3. POST `/api/v1/generate`
+## 3. POST `/api/v1/analysis/{job_id}/cancel`
+
+Requests cancellation of a queued or actively processing analysis job.
+
+### Request
+- **Path Parameter**: `job_id` (UUID4 string)
+
+### Response (200 OK)
+```json
+{
+  "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "status": "CANCELLED",
+  "message": "Job successfully cancelled"
+}
+```
+
+### Error Responses
+- `404 Not Found`: `JOB_NOT_FOUND` — Specified job ID does not exist or has expired.
+- `400 Bad Request`: `INVALID_STATE` — Job has already reached a terminal state (`COMPLETED` or `FAILED`).
+
+---
+
+## 4. POST `/api/v1/generate`
 
 Generates an algorithmic or AI-composed Indian classical music piece matching input theoretical parameters.
 

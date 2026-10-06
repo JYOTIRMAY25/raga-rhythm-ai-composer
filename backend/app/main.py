@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -20,6 +21,7 @@ from backend.app.core.exceptions import (
     api_error_handler,
     generic_exception_handler,
 )
+from backend.app.jobs import job_manager
 
 # Configure Structured Logger
 logging.basicConfig(
@@ -28,6 +30,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ragarhythm")
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manages application startup and graceful shutdown lifecycle."""
+    yield
+    # Graceful shutdown of in-process background worker thread pool
+    job_manager.shutdown(wait=False)
+
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -35,6 +46,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
+    lifespan=lifespan,
 )
 
 # Request ID & Observability Middleware

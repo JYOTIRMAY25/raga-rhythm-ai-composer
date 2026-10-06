@@ -186,3 +186,36 @@ class AnalysisResponse(BaseModel):
     warnings: List[AnalysisWarningSchema] = Field(default_factory=list)
     processing_time_ms: float = Field(default=0.0, ge=0.0)
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class JobErrorSchema(BaseModel):
+    """Sanitized, safe error description for failed jobs."""
+    model_config = ConfigDict(extra="ignore")
+
+    code: str = Field(..., description="Machine-readable error classification code")
+    message: str = Field(..., description="Human-readable sanitized error message")
+
+
+class AnalysisJobStatusResponse(BaseModel):
+    """API response model representing the asynchronous state of an analysis job."""
+    model_config = ConfigDict(extra="ignore")
+
+    job_id: str = Field(..., description="Unique analysis job UUID")
+    status: Literal["QUEUED", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED"] = Field(..., description="Job lifecycle status")
+    progress: int = Field(default=0, ge=0, le=100, description="Monotonically increasing progress percentage 0-100")
+    current_stage: str = Field(default="Initialization", description="Current pipeline execution stage")
+    created_at: str = Field(..., description="ISO 8601 UTC creation timestamp")
+    started_at: Optional[str] = Field(default=None, description="ISO 8601 UTC execution start timestamp")
+    completed_at: Optional[str] = Field(default=None, description="ISO 8601 UTC completion timestamp")
+    result: Optional[AnalysisResponse] = Field(default=None, description="Analysis result payload when COMPLETED")
+    error: Optional[JobErrorSchema] = Field(default=None, description="Error details when FAILED")
+
+
+class AnalysisJobCancelResponse(BaseModel):
+    """Response returned when cancellation is requested on a job."""
+    model_config = ConfigDict(extra="ignore")
+
+    job_id: str = Field(..., description="Unique job identifier UUID")
+    status: Literal["QUEUED", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED"] = Field(..., description="Status after cancellation request")
+    message: str = Field(..., description="Description of cancellation action taken")
+

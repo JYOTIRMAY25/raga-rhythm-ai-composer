@@ -59,6 +59,10 @@ backend/
 │   │   ├── config.py              # Pydantic Settings, environment variables, security constants
 │   │   ├── security.py            # Upload verification, MIME sniffing, sanitization
 │   │   └── exceptions.py          # Custom domain exceptions and HTTP error mappings
+│   ├── jobs/
+│   │   ├── __init__.py            # Package exports
+│   │   ├── models.py              # JobStatus enum, JobRecord, JobError, API schemas
+│   │   └── manager.py             # Bounded in-process JobManager & ThreadPoolExecutor worker
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── domain.py              # Core entities (Raga, Tala, Swara, PerformanceStyle)

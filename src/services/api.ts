@@ -3,6 +3,8 @@
  */
 
 import {
+  AnalysisJobCancelResponse,
+  AnalysisJobResponse,
   AnalysisResponse,
   ApiErrorDetail,
   CompositionRequest,
@@ -115,9 +117,9 @@ export const api = {
   },
 
   /**
-   * Uploads and synchronously analyzes an audio file.
+   * Uploads an audio file and initiates asynchronous analysis job.
    */
-  analyzeAudio: async (file: File): Promise<AnalysisResponse> => {
+  analyzeAudio: async (file: File): Promise<AnalysisJobResponse> => {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -125,7 +127,25 @@ export const api = {
       method: "POST",
       body: formData,
     });
-    return handleResponse<AnalysisResponse>(res);
+    return handleResponse<AnalysisJobResponse>(res);
+  },
+
+  /**
+   * Retrieves the current status, progress, and result of an analysis job.
+   */
+  getAnalysisJob: async (jobId: string): Promise<AnalysisJobResponse> => {
+    const res = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(jobId)}`);
+    return handleResponse<AnalysisJobResponse>(res);
+  },
+
+  /**
+   * Requests cancellation of an in-progress or queued analysis job.
+   */
+  cancelAnalysisJob: async (jobId: string): Promise<AnalysisJobCancelResponse> => {
+    const res = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(jobId)}/cancel`, {
+      method: "POST",
+    });
+    return handleResponse<AnalysisJobCancelResponse>(res);
   },
 
   /**

@@ -7,6 +7,7 @@ from __future__ import annotations
 import io
 import os
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -175,47 +176,67 @@ class TestAPIEndpoints(unittest.TestCase):
         data = response.json()
         self.assertEqual(data["error_code"], "TALA_NOT_FOUND")
 
+    def _poll_job_completion(self, job_id: str, timeout_sec: float = 10.0) -> dict:
+        """Helper polling GET /api/v1/analysis/{job_id} until terminal state."""
+        start_time = time.perf_counter()
+        while time.perf_counter() - start_time < timeout_sec:
+            resp = self.client.get(f"/api/v1/analysis/{job_id}")
+            self.assertEqual(resp.status_code, 200)
+            data = resp.json()
+            if data["status"] in ("COMPLETED", "FAILED", "CANCELLED"):
+                return data
+            time.sleep(0.05)
+        self.fail(f"Job {job_id} timed out after {timeout_sec}s")
+
     # ========================================================================
-    # Audio Analysis Endpoint Tests
+    # Audio Analysis Endpoint Tests (Asynchronous Job Workflow)
     # ========================================================================
 
     def test_analyze_valid_audio_upload(self):
-        """POST /api/v1/analyze with valid WAV returns 200 OK and complete AnalysisResponse."""
+        """POST /api/v1/analyze returns 202 Accepted, and GET /analysis/{id} returns completed result."""
         wav_bytes = self._create_wav_bytes(duration_sec=3.5, f0=146.83)
         files = {"file": ("test_recording.wav", wav_bytes, "audio/wav")}
 
         response = self.client.post("/api/v1/analyze", files=files)
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
+        self.assertEqual(response.status_code, 202)
+        initial_data = response.json()
 
-        self.assertEqual(data["status"], "completed")
-        self.assertIn("analysis_id", data)
+        self.assertIn("job_id", initial_data)
+        self.assertIn(initial_data["status"], ("QUEUED", "PROCESSING"))
+        job_id = initial_data["job_id"]
 
+        # Poll status until completed
+        job_data = self._poll_job_completion(job_id)
+        self.assertEqual(job_data["status"], "COMPLETED")
+        self.assertEqual(job_data["progress"], 100)
+        self.assertIsNotNone(job_data["result"])
+
+        result = job_data["result"]
         # Audio metadata
-        meta = data["audio_metadata"]
+        meta = result["audio_metadata"]
         self.assertEqual(meta["filename"], "test_recording.wav")
         self.assertAlmostEqual(meta["duration_seconds"], 3.5, places=1)
         self.assertEqual(meta["sample_rate"], 22050)
 
         # Tonic
-        self.assertIsNotNone(data["tonic"]["frequency_hz"])
-        self.assertGreater(data["tonic"]["frequency_hz"], 50.0)
-        self.assertGreaterEqual(data["tonic"]["confidence"], 0.0)
-        self.assertLessEqual(data["tonic"]["confidence"], 1.0)
+        self.assertIsNotNone(result["tonic"]["frequency_hz"])
+        self.assertGreater(result["tonic"]["frequency_hz"], 50.0)
+        self.assertGreaterEqual(result["tonic"]["confidence"], 0.0)
+        self.assertLessEqual(result["tonic"]["confidence"], 1.0)
 
         # Swara
-        self.assertIn("S", data["swara"]["pitch_class_distribution"])
+        self.assertIn("S", result["swara"]["pitch_class_distribution"])
 
         # Raga
-        self.assertIsNotNone(data["raga"]["name"])
-        self.assertGreaterEqual(data["raga"]["confidence"], 0.0)
+        self.assertIsNotNone(result["raga"]["name"])
+        self.assertGreaterEqual(result["raga"]["confidence"], 0.0)
 
         # Rhythm & Tala
-        self.assertIsNotNone(data["rhythm"]["laya"])
-        self.assertIsNotNone(data["tala"]["name"])
+        self.assertIsNotNone(result["rhythm"]["laya"])
+        self.assertIsNotNone(result["tala"]["name"])
 
         # Processing time
-        self.assertGreater(data["processing_time_ms"], 0.0)
+        self.assertGreater(result["processing_time_ms"], 0.0)
 
     def test_analyze_empty_file_rejected(self):
         """POST /api/v1/analyze with 0 bytes returns 422 Unprocessable Entity."""
@@ -251,24 +272,24 @@ class TestAPIEndpoints(unittest.TestCase):
         files = {"file": (malicious_filename, wav_bytes, "audio/wav")}
 
         response = self.client.post("/api/v1/analyze", files=files)
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
+        self.assertEqual(response.status_code, 202)
+        initial_data = response.json()
+        job_id = initial_data["job_id"]
+
+        job_data = self._poll_job_completion(job_id)
+        self.assertEqual(job_data["status"], "COMPLETED")
+        meta = job_data["result"]["audio_metadata"]
         # Filename in response should have stripped directory traversal
-        self.assertNotIn("..", data["audio_metadata"]["filename"])
-        self.assertNotIn("/", data["audio_metadata"]["filename"])
-        self.assertEqual(data["audio_metadata"]["filename"], "passwd.wav")
+        self.assertNotIn("..", meta["filename"])
+        self.assertNotIn("/", meta["filename"])
+        self.assertEqual(meta["filename"], "passwd.wav")
 
-    # ========================================================================
-    # Planned Contract Placeholder Tests (501 Not Implemented)
-    # ========================================================================
-
-    def test_get_analysis_by_id_returns_501_not_implemented(self):
-        """GET /api/v1/analysis/{id} returns 501 per Phase 6 contract."""
+    def test_get_analysis_by_id_returns_404_not_found(self):
+        """GET /api/v1/analysis/{id} returns 404 for unknown job ID."""
         response = self.client.get("/api/v1/analysis/sample-job-id-12345")
-        self.assertEqual(response.status_code, 501)
+        self.assertEqual(response.status_code, 404)
         data = response.json()
-        self.assertEqual(data["error_code"], "FEATURE_NOT_IMPLEMENTED")
-        self.assertIn("endpoint", data["details"])
+        self.assertEqual(data["error_code"], "JOB_NOT_FOUND")
 
     def test_post_generate_returns_200_with_symbolic_composition(self):
         """POST /api/v1/generate returns 200 with validated SymbolicComposition."""
@@ -340,10 +361,14 @@ class TestAPIEndpoints(unittest.TestCase):
         files = {"file": (f"{raga_title}_smoke.wav", wav_bytes, "audio/wav")}
 
         response = self.client.post("/api/v1/analyze", files=files)
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
+        self.assertEqual(response.status_code, 202)
+        initial_data = response.json()
+        job_id = initial_data["job_id"]
 
-        self.assertEqual(data["status"], "completed")
+        job_data = self._poll_job_completion(job_id)
+        self.assertEqual(job_data["status"], "COMPLETED")
+        data = job_data["result"]
+
         self.assertIsNotNone(data["tonic"]["frequency_hz"])
         self.assertIsNotNone(data["raga"]["name"])
         self.assertIsNotNone(data["tala"]["name"])

@@ -1,12 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAnalysis } from "./use-analysis";
 import { api, ApiError } from "@/services/api";
-import { AnalysisResponse } from "@/types/api";
+import { AnalysisJobResponse, AnalysisResponse } from "@/types/api";
 
 vi.mock("@/services/api", () => ({
   api: {
     analyzeAudio: vi.fn(),
+    getAnalysisJob: vi.fn(),
+    cancelAnalysisJob: vi.fn(),
   },
   ApiError: class extends Error {
     public statusCode: number;
@@ -27,16 +29,23 @@ vi.mock("@/components/ui/use-toast", () => ({
 
 describe("useAnalysis Hook (src/hooks/use-analysis.ts)", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
   });
 
-  it("initializes in idle state with null result and null errors", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("initializes in idle state with null result, progress 0, and null errors", () => {
     const { result } = renderHook(() => useAnalysis());
 
     expect(result.current.status).toBe("idle");
     expect(result.current.audioFile).toBeNull();
     expect(result.current.analysisResult).toBeNull();
     expect(result.current.isAnalyzing).toBe(false);
+    expect(result.current.progress).toBe(0);
+    expect(result.current.currentStage).toBe("Initialization");
     expect(result.current.errorMessage).toBeNull();
   });
 
@@ -77,55 +86,106 @@ describe("useAnalysis Hook (src/hooks/use-analysis.ts)", () => {
     expect(result.current.errorMessage).toContain("Unsupported file format");
   });
 
-  it("successfully performs audio analysis and sets analysisResult", async () => {
-    const mockResponse: AnalysisResponse = {
-      success: true,
+  it("creates job, polls status through stages, and completes with analysis result", async () => {
+    const mockAnalysisPayload: AnalysisResponse = {
+      analysis_id: "job-123",
+      status: "completed",
       audio_metadata: {
         filename: "yaman.wav",
         duration_seconds: 12.0,
-        sample_rate: 44100,
+        sample_rate: 22050,
         channels: 1,
         format: "wav",
+        is_silent: false,
+        rms: 0.1,
+        peak_amplitude: 0.8,
       },
-      tonic: { detected_tonic: "C", frequency_hz: 130.81, confidence: 0.95 },
+      tonic: { note_name: "C", frequency_hz: 130.81, confidence: 0.95, is_ambiguous: false },
       pitch: {
+        total_frames: 1000,
         voiced_frames: 800,
-        unvoiced_frames: 200,
-        voicing_ratio: 0.8,
-        mean_pitch_hz: 180,
-        median_pitch_hz: 175,
-        min_pitch_hz: 120,
-        max_pitch_hz: 360,
+        voiced_percentage: 80.0,
+        frame_rate: 225.0,
+        method: "yin",
+        downsampled_timestamps: [],
+        downsampled_frequencies: [],
       },
       swara: {
-        dominant_swaras: ["S", "R", "G", "M'", "P", "D", "N"],
-        swara_coverage: 0.9,
-        register_distribution: {},
+        dominant_swaras: ["S", "G", "P"],
+        active_swaras: ["S", "R", "G", "M'", "P", "D", "N"],
+        total_segments: 15,
+        mean_cents_deviation: 4.2,
         pitch_class_distribution: { S: 0.2, G: 0.3, P: 0.25 },
-        transitions: [],
+        transitions_top: [],
       },
       raga: {
         name: "Yaman",
         confidence: 0.92,
-        primary_raga: { id: "yaman", name: "Yaman", confidence: 0.92 },
-        candidates: [{ raga_id: "yaman", name: "Yaman", confidence: 0.92 }],
-        motifs_detected: [],
+        is_ambiguous: false,
+        aroha: ["N", "R", "G"],
+        avaroha: ["S", "N", "D"],
+        alternatives: [],
+        motif_matches: [],
       },
       rhythm: {
+        estimated_bpm: 80.0,
+        laya: "Madhya",
+        tempo_confidence: 0.85,
+        total_onsets: 32,
+        frame_rate: 100.0,
+      },
+      beat_grid: {
+        beat_count: 32,
+        beat_period: 0.75,
         bpm: 80.0,
-        confidence: 0.85,
-        is_rhythmic: true,
+        confidence: 0.9,
+        selected_hypothesis: "1.0x",
+        sam_timestamps: [0.0, 12.0],
       },
       tala: {
         name: "Teental",
         matras: 16,
         confidence: 0.88,
+        is_ambiguous: false,
+        khali_positions: [9],
+        tali_positions: [1, 5, 13],
+        candidates: [],
+        tempo_hypothesis: "1.0x",
       },
       warnings: [],
-      execution_time_seconds: 0.98,
+      processing_time_ms: 250.0,
+      created_at: new Date().toISOString(),
     };
 
-    vi.mocked(api.analyzeAudio).mockResolvedValueOnce(mockResponse);
+    const initialJob: AnalysisJobResponse = {
+      job_id: "job-123",
+      status: "QUEUED",
+      progress: 5,
+      current_stage: "Audio preprocessing",
+      created_at: new Date().toISOString(),
+    };
+
+    const processingJob: AnalysisJobResponse = {
+      job_id: "job-123",
+      status: "PROCESSING",
+      progress: 50,
+      current_stage: "Tonic resolution",
+      created_at: new Date().toISOString(),
+    };
+
+    const completedJob: AnalysisJobResponse = {
+      job_id: "job-123",
+      status: "COMPLETED",
+      progress: 100,
+      current_stage: "Completed",
+      created_at: new Date().toISOString(),
+      result: mockAnalysisPayload,
+    };
+
+    vi.mocked(api.analyzeAudio).mockResolvedValueOnce(initialJob);
+    vi.mocked(api.getAnalysisJob)
+      .mockResolvedValueOnce(processingJob)
+      .mockResolvedValueOnce(completedJob);
 
     const { result } = renderHook(() => useAnalysis());
     const validFile = new File(["valid-audio-data"], "yaman.wav", { type: "audio/wav" });
@@ -138,22 +198,55 @@ describe("useAnalysis Hook (src/hooks/use-analysis.ts)", () => {
       await result.current.analyzeAudio();
     });
 
+    expect(result.current.status).toBe("analyzing");
+    expect(result.current.jobId).toBe("job-123");
+    expect(result.current.progress).toBe(5);
+
+    // Advance timer for first poll
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(result.current.progress).toBe(50);
+    expect(result.current.currentStage).toBe("Tonic resolution");
+
+    // Advance timer for completion poll
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+
     expect(result.current.status).toBe("success");
     expect(result.current.isAnalyzing).toBe(false);
-    expect(result.current.analysisResult).toEqual(mockResponse);
+    expect(result.current.progress).toBe(100);
+    expect(result.current.analysisResult).toEqual(mockAnalysisPayload);
   });
 
-  it("handles analysis API error gracefully and sets error message", async () => {
-    vi.mocked(api.analyzeAudio).mockRejectedValueOnce(
-      new ApiError({
-        message: "Audio contains insufficient tonal information.",
-        status_code: 422,
-        error_code: "UNPROCESSABLE_AUDIO",
-      })
-    );
+  it("handles job failure during asynchronous processing", async () => {
+    const initialJob: AnalysisJobResponse = {
+      job_id: "job-fail-1",
+      status: "PROCESSING",
+      progress: 10,
+      current_stage: "Audio preprocessing",
+      created_at: new Date().toISOString(),
+    };
+
+    const failedJob: AnalysisJobResponse = {
+      job_id: "job-fail-1",
+      status: "FAILED",
+      progress: 15,
+      current_stage: "Failed",
+      created_at: new Date().toISOString(),
+      error: {
+        code: "INVALID_AUDIO_FORMAT",
+        message: "Audio stream is corrupt.",
+      },
+    };
+
+    vi.mocked(api.analyzeAudio).mockResolvedValueOnce(initialJob);
+    vi.mocked(api.getAnalysisJob).mockResolvedValueOnce(failedJob);
 
     const { result } = renderHook(() => useAnalysis());
-    const validFile = new File(["valid-audio-data"], "silence.wav", { type: "audio/wav" });
+    const validFile = new File(["corrupt-data"], "corrupt.wav", { type: "audio/wav" });
 
     act(() => {
       result.current.handleFileChange(validFile);
@@ -163,28 +256,110 @@ describe("useAnalysis Hook (src/hooks/use-analysis.ts)", () => {
       await result.current.analyzeAudio();
     });
 
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+
     expect(result.current.status).toBe("error");
-    expect(result.current.isAnalyzing).toBe(false);
-    expect(result.current.errorMessage).toBe("Audio contains insufficient tonal information.");
-    expect(result.current.errorDetail?.status_code).toBe(422);
+    expect(result.current.errorMessage).toBe("Audio stream is corrupt.");
+    expect(result.current.errorDetail?.error_code).toBe("INVALID_AUDIO_FORMAT");
   });
 
-  it("resets analysis state on reset() call", () => {
+  it("supports cancellation of an active job and stops polling", async () => {
+    const initialJob: AnalysisJobResponse = {
+      job_id: "job-cancel-1",
+      status: "PROCESSING",
+      progress: 30,
+      current_stage: "Pitch extraction",
+      created_at: new Date().toISOString(),
+    };
+
+    vi.mocked(api.analyzeAudio).mockResolvedValueOnce(initialJob);
+    vi.mocked(api.cancelAnalysisJob).mockResolvedValueOnce({
+      job_id: "job-cancel-1",
+      status: "CANCELLED",
+      message: "Job was cancelled.",
+    });
+
     const { result } = renderHook(() => useAnalysis());
-    const validFile = new File(["valid-audio-data"], "track.mp3", { type: "audio/mp3" });
+    const validFile = new File(["data"], "test.wav", { type: "audio/wav" });
 
     act(() => {
       result.current.handleFileChange(validFile);
     });
-    expect(result.current.status).toBe("selected");
 
-    act(() => {
-      result.current.reset();
+    await act(async () => {
+      await result.current.analyzeAudio();
+    });
+
+    expect(result.current.status).toBe("analyzing");
+
+    await act(async () => {
+      await result.current.cancelAnalysis();
     });
 
     expect(result.current.status).toBe("idle");
-    expect(result.current.audioFile).toBeNull();
-    expect(result.current.analysisResult).toBeNull();
-    expect(result.current.errorMessage).toBeNull();
+    expect(api.cancelAnalysisJob).toHaveBeenCalledWith("job-cancel-1");
+  });
+
+  it("protects against stale job responses when file is changed", async () => {
+    const job1: AnalysisJobResponse = {
+      job_id: "job-stale-1",
+      status: "PROCESSING",
+      progress: 20,
+      current_stage: "Tonic estimation",
+      created_at: new Date().toISOString(),
+    };
+
+    vi.mocked(api.analyzeAudio).mockResolvedValueOnce(job1);
+
+    const { result } = renderHook(() => useAnalysis());
+    const file1 = new File(["file1"], "file1.wav", { type: "audio/wav" });
+
+    act(() => {
+      result.current.handleFileChange(file1);
+    });
+
+    await act(async () => {
+      await result.current.analyzeAudio();
+    });
+
+    // User selects a new file before poll returns
+    const file2 = new File(["file2"], "file2.wav", { type: "audio/wav" });
+    act(() => {
+      result.current.handleFileChange(file2);
+    });
+
+    expect(result.current.status).toBe("selected");
+    expect(result.current.jobId).toBeNull();
+  });
+
+  it("cleans up polling timers on unmount", async () => {
+    const initialJob: AnalysisJobResponse = {
+      job_id: "job-unmount",
+      status: "PROCESSING",
+      progress: 10,
+      current_stage: "Audio preprocessing",
+      created_at: new Date().toISOString(),
+    };
+
+    vi.mocked(api.analyzeAudio).mockResolvedValueOnce(initialJob);
+
+    const { result, unmount } = renderHook(() => useAnalysis());
+    const file = new File(["data"], "track.wav", { type: "audio/wav" });
+
+    act(() => {
+      result.current.handleFileChange(file);
+    });
+
+    await act(async () => {
+      await result.current.analyzeAudio();
+    });
+
+    unmount();
+    // Advance timers - no unhandled state updates on unmounted hook
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
   });
 });
