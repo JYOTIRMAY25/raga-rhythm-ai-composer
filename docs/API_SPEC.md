@@ -171,18 +171,27 @@ Requests cancellation of a queued or actively processing analysis job.
 ### Request
 - **Path Parameter**: `job_id` (UUID4 string)
 
-### Response (200 OK)
+### Response (200 OK — Active or Queued Job Cancelled)
 ```json
 {
   "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
   "status": "CANCELLED",
-  "message": "Job successfully cancelled"
+  "message": "Job was cancelled before execution started."
+}
+```
+
+### Response (200 OK — Idempotent Terminal State)
+When cancellation is requested on an already terminal job (`COMPLETED`, `FAILED`, or previously `CANCELLED`), the endpoint returns 200 OK idempotently reflecting the terminal status:
+```json
+{
+  "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "status": "COMPLETED",
+  "message": "Job has already reached terminal status: COMPLETED."
 }
 ```
 
 ### Error Responses
 - `404 Not Found`: `JOB_NOT_FOUND` — Specified job ID does not exist or has expired.
-- `400 Bad Request`: `INVALID_STATE` — Job has already reached a terminal state (`COMPLETED` or `FAILED`).
 
 ---
 

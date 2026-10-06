@@ -84,10 +84,17 @@ class JobRecord:
 
     def to_status_response(self) -> AnalysisJobStatusResponse:
         """Serializes current job state into external Pydantic response schema."""
+        # Progress invariant: clamped to [0, 100]; 100% occurs if and only if status == COMPLETED
+        effective_progress = max(0, min(100, int(self.progress)))
+        if self.status != JobStatus.COMPLETED and effective_progress >= 100:
+            effective_progress = 99
+        elif self.status == JobStatus.COMPLETED:
+            effective_progress = 100
+
         return AnalysisJobStatusResponse(
             job_id=self.job_id,
             status=self.status,
-            progress=self.progress,
+            progress=effective_progress,
             current_stage=self.current_stage,
             created_at=self.created_at.isoformat(),
             started_at=self.started_at.isoformat() if self.started_at else None,

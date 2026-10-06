@@ -85,11 +85,13 @@ Progress updates are emitted strictly at meaningful DSP pipeline stage boundarie
 - **Cross-Platform Compatibility**: Avoids multiprocessing spawn issues on Windows.
 - **Thread Safety**: State transitions are synchronized using Python's `threading.RLock`.
 
-### Concurrency & Queue Bounds:
+### Concurrency, Queue Bounds & Eviction Policy:
 - `max_analysis_workers` (Default: 4): Maximum concurrent worker threads executing DSP pipelines.
-- `max_queued_jobs` (Default: 20): Maximum pending jobs in queue. Additional submissions receive HTTP 429 (`QUEUE_FULL`).
-- `job_retention_seconds` (Default: 3600s / 1 hr): Completed and failed jobs are evicted after TTL expiry.
-- `max_retained_jobs` (Default: 100): Hard memory cap on total job records stored in the manager.
+- `max_queued_jobs` (Default: 50): Maximum active non-terminal jobs. Submissions exceeding this boundary receive HTTP 429 (`JOB_QUEUE_FULL`). A fast pre-upload check (`has_capacity()`) rejects incoming requests before disk streaming, while `create_job()` provides authoritative atomic reservation under lock.
+- `job_retention_seconds` (Default: 3600s / 1 hr): Retention TTL for completed/failed/cancelled jobs.
+- `max_retained_jobs` (Default: 1000): Hard memory cap on total job records stored in the manager.
+- **Opportunistic TTL Eviction**: Expired terminal jobs are purged synchronously during new job registration (`create_job()`) rather than via background thread overhead. If retention capacity is reached, the oldest terminal job is evicted FIFO. At ~5–10 KB per serialized result schema, peak retention memory is strictly bounded (<10 MB).
+- **Process Lifetime**: As an in-process system, all active and retained job records are cleared upon process restart.
 
 ---
 

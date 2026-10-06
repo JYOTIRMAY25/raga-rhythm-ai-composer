@@ -257,6 +257,20 @@ class JobManager:
         )
         self._is_shutdown = False
 
+    def has_capacity(self) -> bool:
+        """
+        Thread-safe check whether the queue can accept an additional job.
+        Does not permanently reserve capacity (authoritative reservation is inside create_job).
+        Used as a fast pre-check before expensive audio upload streaming.
+        """
+        with self._lock:
+            if self._is_shutdown:
+                return False
+            active_jobs_count = sum(
+                1 for j in self._jobs.values() if not j.status.is_terminal
+            )
+            return active_jobs_count < self._max_queued_jobs
+
     def create_job(
         self,
         original_filename: str,
@@ -298,6 +312,8 @@ class JobManager:
     def submit_job(self, job_id: str) -> JobRecord:
         """
         Submits a queued job to the worker thread pool.
+        If submission fails (e.g. shutdown or executor rejection), marks the job as FAILED,
+        restores queue capacity by setting terminal state, cleans up temp file, and raises.
         """
         with self._lock:
             record = self._jobs.get(job_id)
@@ -307,13 +323,66 @@ class JobManager:
             if record.status != JobStatus.QUEUED:
                 return record
 
-            self._executor.submit(self._worker_execute, job_id)
+            try:
+                self._executor.submit(self._worker_execute, job_id)
+            except Exception as exc:
+                logger.error(f"Executor submission failed for job {job_id}: {exc}")
+                record.status = JobStatus.FAILED
+                record.current_stage = "Failed"
+                record.completed_at = datetime.now(timezone.utc)
+                record.error = JobError(
+                    code="SUBMISSION_FAILED",
+                    message="Failed to schedule audio analysis job on worker pool.",
+                )
+                self._cleanup_temp_file(record.file_path)
+                raise
+            return record
+
+    def create_and_submit_job(
+        self,
+        original_filename: str,
+        file_path: Optional[str] = None,
+    ) -> JobRecord:
+        """
+        Atomically creates a job and submits it to the worker executor under lock.
+        If executor submission fails, cleans up resources and guarantees the job
+        does not remain in an orphaned QUEUED state.
+        """
+        with self._lock:
+            record = self.create_job(
+                original_filename=original_filename,
+                file_path=file_path,
+            )
+            try:
+                self._executor.submit(self._worker_execute, record.job_id)
+            except Exception as exc:
+                logger.error(f"Executor submission failed for job {record.job_id}: {exc}")
+                record.status = JobStatus.FAILED
+                record.current_stage = "Failed"
+                record.completed_at = datetime.now(timezone.utc)
+                record.error = JobError(
+                    code="SUBMISSION_FAILED",
+                    message="Failed to schedule audio analysis job on worker pool.",
+                )
+                self._cleanup_temp_file(record.file_path)
+                raise
             return record
 
     def get_job(self, job_id: str) -> Optional[JobRecord]:
         """Retrieves job record by ID."""
         with self._lock:
             return self._jobs.get(job_id)
+
+    def get_job_status(self, job_id: str) -> Optional[AnalysisJobStatusResponse]:
+        """
+        Atomically snapshots the job's state into an immutable AnalysisJobStatusResponse schema
+        while holding the lock. Prevents status/progress serialization races.
+        """
+        with self._lock:
+            record = self._jobs.get(job_id)
+            if not record:
+                return None
+            return record.to_status_response()
 
     def cancel_job(self, job_id: str) -> Tuple[JobStatus, str]:
         """

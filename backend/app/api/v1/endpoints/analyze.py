@@ -10,6 +10,7 @@ from backend.app.core.exceptions import (
     AudioDurationExceededError,
     AudioValidationError,
     JobNotFoundError,
+    JobQueueFullError,
 )
 from backend.app.core.security import save_upload_to_storage
 from backend.app.jobs import (
@@ -35,17 +36,21 @@ async def analyze_audio(
     Validates the uploaded audio file and enqueues an asynchronous analysis job.
     Returns 202 Accepted with job metadata and initial QUEUED/PROCESSING state.
     """
+    # Medium 2: Fast pre-check to reject uploads immediately when queue is saturated, avoiding wasted disk I/O
+    if not job_manager.has_capacity():
+        raise JobQueueFullError("Analysis queue is full. Please retry shortly.")
+
     temp_path, original_filename, _ = await save_upload_to_storage(file)
 
     try:
-        record = job_manager.create_job(
+        # Medium 3: Atomic creation and submission under lock prevents orphaned QUEUED jobs
+        record = job_manager.create_and_submit_job(
             original_filename=original_filename,
             file_path=str(temp_path),
         )
-        job_manager.submit_job(record.job_id)
         return record.to_status_response()
     except Exception:
-        # Cleanup temp file on immediate queue failure
+        # Cleanup temp file on immediate queue or submission failure
         if temp_path.exists():
             try:
                 temp_path.unlink()
@@ -64,12 +69,13 @@ async def analyze_audio(
 async def get_analysis_job(job_id: str) -> AnalysisJobStatusResponse:
     """
     Returns the real-time lifecycle status, progress (0-100), stage, error, or completed result payload.
+    Uses atomic lock snapshot to guarantee status and progress consistency (Medium 1).
     """
-    job = job_manager.get_job(job_id)
-    if not job:
+    status_response = job_manager.get_job_status(job_id)
+    if not status_response:
         raise JobNotFoundError(f"Analysis job '{job_id}' not found.")
 
-    return job.to_status_response()
+    return status_response
 
 
 @router.post(

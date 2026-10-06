@@ -32,6 +32,7 @@ from __future__ import annotations
 import io
 import os
 import tempfile
+import threading
 import time
 import unittest
 import uuid
@@ -517,6 +518,136 @@ class TestAnalysisJobSystem(unittest.TestCase):
         self.assertNotIn(j2.job_id, mgr._jobs)
         self.assertNotIn(j3.job_id, mgr._jobs)
         self.assertIn(j4.job_id, mgr._jobs)
+
+        mgr.shutdown(wait=False)
+
+    # ========================================================================
+    # 25. Atomic Status Snapshot Consistency (Medium 1)
+    # ========================================================================
+    def test_25_atomic_get_job_status_consistency(self):
+        """25. get_job_status() snapshots state under lock; progress 100 occurs only for COMPLETED."""
+        mgr = JobManager(max_workers=2, max_queued_jobs=10)
+        rec = mgr.create_job("atomic_status.wav")
+        mock_res = MagicMock(spec=AnalysisResponse)
+
+        status_snapshots = []
+        errors = []
+
+        # Thread 1: Rapidly fetches get_job_status
+        def reader():
+            for _ in range(200):
+                try:
+                    s = mgr.get_job_status(rec.job_id)
+                    if s:
+                        status_snapshots.append((s.status, s.progress))
+                except Exception as e:
+                    errors.append(e)
+
+        # Thread 2: Simulates worker updating progress and completing
+        def worker():
+            for p in range(10, 95, 15):
+                mgr.update_progress(rec.job_id, p, f"Stage {p}")
+                time.sleep(0.001)
+            mgr.complete_job(rec.job_id, mock_res)
+
+        t_reader = threading.Thread(target=reader)
+        t_worker = threading.Thread(target=worker)
+
+        t_reader.start()
+        t_worker.start()
+        t_reader.join()
+        t_worker.join()
+
+        self.assertEqual(len(errors), 0)
+        # Verify invariant on all snapshots: progress == 100 <=> status == COMPLETED
+        for st, prog in status_snapshots:
+            if prog == 100:
+                self.assertEqual(st, JobStatus.COMPLETED)
+            if st != JobStatus.COMPLETED:
+                self.assertLess(prog, 100)
+
+        mgr.shutdown(wait=False)
+
+    # ========================================================================
+    # 26. Pre-Upload Queue Capacity Guard (Medium 2)
+    # ========================================================================
+    def test_26_pre_upload_capacity_guard(self):
+        """26. has_capacity() accurately reflects queue headroom and gates requests."""
+        mgr = JobManager(max_workers=1, max_queued_jobs=2)
+        self.assertTrue(mgr.has_capacity())
+
+        j1 = mgr.create_job("j1.wav")
+        self.assertTrue(mgr.has_capacity())
+
+        j2 = mgr.create_job("j2.wav")
+        # Capacity now exhausted (2/2 active jobs)
+        self.assertFalse(mgr.has_capacity())
+
+        # Calling create_job when full raises JobQueueFullError
+        with self.assertRaises(JobQueueFullError):
+            mgr.create_job("j3.wav")
+
+        # Completing j1 restores capacity
+        mgr.complete_job(j1.job_id, MagicMock(spec=AnalysisResponse))
+        self.assertTrue(mgr.has_capacity())
+
+        mgr.shutdown(wait=False)
+
+    # ========================================================================
+    # 27. Atomic Job Registration & Submission Failure Handling (Medium 3)
+    # ========================================================================
+    def test_27_atomic_create_and_submit_failure_handling(self):
+        """27. Executor rejection does not orphan QUEUED jobs and restores queue capacity."""
+        mgr = JobManager(max_workers=1, max_queued_jobs=5)
+        wav_path = self._create_wav_file(duration_sec=3.0)
+
+        # Mock executor submit to raise RuntimeError (e.g. shutdown / thread pool rejection)
+        with patch.object(mgr._executor, "submit", side_effect=RuntimeError("cannot schedule new futures")):
+            with self.assertRaises(RuntimeError):
+                mgr.create_and_submit_job("rejected.wav", str(wav_path))
+
+        # Verify: no job left in QUEUED state
+        active_count = sum(1 for j in mgr._jobs.values() if not j.status.is_terminal)
+        self.assertEqual(active_count, 0)
+
+        # Verify the rejected job transitioned to FAILED with sanitized error
+        failed_jobs = [j for j in mgr._jobs.values() if j.status == JobStatus.FAILED]
+        self.assertEqual(len(failed_jobs), 1)
+        self.assertEqual(failed_jobs[0].error.code, "SUBMISSION_FAILED")
+
+        # Verify temporary file was cleaned up
+        self.assertFalse(wav_path.exists())
+
+        mgr.shutdown(wait=False)
+
+    # ========================================================================
+    # 28. Terminal Cancellation Idempotency (Low 4)
+    # ========================================================================
+    def test_28_terminal_cancellation_idempotence(self):
+        """28. Cancelling already terminal jobs returns 200 OK idempotently with terminal status."""
+        mgr = JobManager(max_workers=2, max_queued_jobs=5)
+
+        # Completed job cancellation
+        j1 = mgr.create_job("comp.wav")
+        mgr.complete_job(j1.job_id, MagicMock(spec=AnalysisResponse))
+        st1, msg1 = mgr.cancel_job(j1.job_id)
+        self.assertEqual(st1, JobStatus.COMPLETED)
+        self.assertIn("already reached terminal status", msg1)
+
+        # Failed job cancellation
+        j2 = mgr.create_job("fail.wav")
+        mgr.fail_job(j2.job_id, "TEST_ERR", "Test failure")
+        st2, msg2 = mgr.cancel_job(j2.job_id)
+        self.assertEqual(st2, JobStatus.FAILED)
+        self.assertIn("already reached terminal status", msg2)
+
+        # Repeated cancellation on cancelled job
+        j3 = mgr.create_job("canc.wav")
+        st3a, _ = mgr.cancel_job(j3.job_id)
+        self.assertEqual(st3a, JobStatus.CANCELLED)
+        st3b, msg3b = mgr.cancel_job(j3.job_id)
+        self.assertEqual(st3b, JobStatus.CANCELLED)
+        self.assertIn("already reached terminal status", msg3b)
 
         mgr.shutdown(wait=False)
 

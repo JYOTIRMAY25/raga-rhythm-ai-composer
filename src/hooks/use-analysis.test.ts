@@ -362,4 +362,122 @@ describe("useAnalysis Hook (src/hooks/use-analysis.ts)", () => {
       vi.advanceTimersByTime(2000);
     });
   });
+
+  it("drops in-flight fetch response if component unmounts before promise resolves", async () => {
+    let resolveJobPoll!: (val: AnalysisJobResponse) => void;
+    const delayedPollPromise = new Promise<AnalysisJobResponse>((resolve) => {
+      resolveJobPoll = resolve;
+    });
+
+    const initialJob: AnalysisJobResponse = {
+      job_id: "job-inflight",
+      status: "PROCESSING",
+      progress: 10,
+      current_stage: "Audio preprocessing",
+      created_at: new Date().toISOString(),
+    };
+
+    vi.mocked(api.analyzeAudio).mockResolvedValueOnce(initialJob);
+    vi.mocked(api.getAnalysisJob).mockReturnValueOnce(delayedPollPromise);
+
+    const { result, unmount } = renderHook(() => useAnalysis());
+    const file = new File(["data"], "inflight.wav", { type: "audio/wav" });
+
+    act(() => {
+      result.current.handleFileChange(file);
+    });
+
+    await act(async () => {
+      await result.current.analyzeAudio();
+    });
+
+    // Advance timer to trigger pollJobStatus
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    // Unmount while fetch is in-flight
+    unmount();
+
+    // Now resolve the in-flight fetch
+    await act(async () => {
+      resolveJobPoll({
+        job_id: "job-inflight",
+        status: "COMPLETED",
+        progress: 100,
+        current_stage: "Completed",
+        created_at: new Date().toISOString(),
+      });
+    });
+
+    // No error, clean drop
+  });
+
+  it("prevents delayed Job A poll response from overwriting newer Job B state", async () => {
+    let resolveJobAPoll!: (val: AnalysisJobResponse) => void;
+    const delayedJobAPromise = new Promise<AnalysisJobResponse>((resolve) => {
+      resolveJobAPoll = resolve;
+    });
+
+    const jobA: AnalysisJobResponse = {
+      job_id: "job-A",
+      status: "PROCESSING",
+      progress: 20,
+      current_stage: "Pitch extraction",
+      created_at: new Date().toISOString(),
+    };
+
+    const jobB: AnalysisJobResponse = {
+      job_id: "job-B",
+      status: "PROCESSING",
+      progress: 5,
+      current_stage: "Audio preprocessing",
+      created_at: new Date().toISOString(),
+    };
+
+    vi.mocked(api.analyzeAudio)
+      .mockResolvedValueOnce(jobA)
+      .mockResolvedValueOnce(jobB);
+    vi.mocked(api.getAnalysisJob).mockReturnValueOnce(delayedJobAPromise);
+
+    const { result } = renderHook(() => useAnalysis());
+
+    // Start Job A
+    act(() => {
+      result.current.handleFileChange(new File(["dataA"], "fileA.wav", { type: "audio/wav" }));
+    });
+    await act(async () => {
+      await result.current.analyzeAudio();
+    });
+    expect(result.current.jobId).toBe("job-A");
+
+    // Trigger poll for Job A
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    // While Job A poll is pending, user selects File B and starts Job B
+    act(() => {
+      result.current.handleFileChange(new File(["dataB"], "fileB.wav", { type: "audio/wav" }));
+    });
+    await act(async () => {
+      await result.current.analyzeAudio();
+    });
+    expect(result.current.jobId).toBe("job-B");
+
+    // Now resolve delayed Job A poll with COMPLETED
+    await act(async () => {
+      resolveJobAPoll({
+        job_id: "job-A",
+        status: "COMPLETED",
+        progress: 100,
+        current_stage: "Completed",
+        created_at: new Date().toISOString(),
+      });
+    });
+
+    // Job B state must remain intact; Job A completion must NOT overwrite Job B
+    expect(result.current.jobId).toBe("job-B");
+    expect(result.current.status).toBe("analyzing");
+  });
 });

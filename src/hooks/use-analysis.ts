@@ -46,10 +46,11 @@ export function useAnalysis() {
     }
   }, []);
 
-  // Cleanup polling on unmount
+  // Cleanup polling on unmount and invalidate active job reference
   useEffect(() => {
     return () => {
       clearPolling();
+      activeJobIdRef.current = null;
     };
   }, [clearPolling]);
 

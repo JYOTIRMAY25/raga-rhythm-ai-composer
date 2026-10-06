@@ -232,6 +232,100 @@ class TestAdversarialAnalysisJobs(unittest.TestCase):
             self.assertLessEqual(current_progress, 99)
             last_progress = current_progress
 
+    def test_adv_property_progress_100_only_for_completed(self):
+        """Property: across all possible job lifecycle states and arbitrary progress, 100 occurs ONLY for COMPLETED."""
+        rng = random.Random(1337)
+        statuses = [JobStatus.QUEUED, JobStatus.PROCESSING, JobStatus.FAILED, JobStatus.CANCELLED, JobStatus.COMPLETED]
+
+        for _ in range(300):
+            chosen_status = rng.choice(statuses)
+            arbitrary_progress = rng.randint(-100, 300)
+
+            rec = JobRecord(job_id=str(uuid.uuid4()), original_filename="fuzz.wav")
+            rec.status = chosen_status
+            rec.progress = arbitrary_progress
+
+            resp = rec.to_status_response()
+            # Invariant 1: 0 <= progress <= 100
+            self.assertGreaterEqual(resp.progress, 0)
+            self.assertLessEqual(resp.progress, 100)
+
+            # Invariant 2: 100 occurs if and only if COMPLETED
+            if chosen_status == JobStatus.COMPLETED:
+                self.assertEqual(resp.progress, 100)
+            else:
+                self.assertLess(resp.progress, 100)
+
+    def test_adv_saturated_queue_rejects_before_disk_write(self):
+        """Attacks analyze endpoint when queue is full: must return 429 without invoking save_upload_to_storage."""
+        wav_bytes = self._create_wav_file(duration_sec=3.0)
+
+        with patch("backend.app.api.v1.endpoints.analyze.job_manager.has_capacity", return_value=False):
+            with patch("backend.app.api.v1.endpoints.analyze.save_upload_to_storage") as mock_save:
+                files = {"file": ("saturated.wav", wav_bytes.read_bytes(), "audio/wav")}
+                resp = self.client.post("/api/v1/analyze", files=files)
+
+                self.assertEqual(resp.status_code, 429)
+                data = resp.json()
+                self.assertEqual(data["error_code"], "JOB_QUEUE_FULL")
+                # Proves disk write was bypassed!
+                mock_save.assert_not_called()
+
+    def test_adv_concurrent_capacity_boundary(self):
+        """10 concurrent threads submit against max_queued_jobs=4; exactly 4 succeed, 6 fail, no leaks."""
+        mgr = JobManager(max_workers=2, max_queued_jobs=4)
+
+        successes = []
+        full_errors = []
+
+        def submitter(idx):
+            try:
+                rec = mgr.create_job(f"job_{idx}.wav")
+                successes.append(rec.job_id)
+            except JobQueueFullError as e:
+                full_errors.append(e)
+
+        threads = [threading.Thread(target=submitter, args=(i,)) for i in range(10)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(len(successes), 4)
+        self.assertEqual(len(full_errors), 6)
+        active_count = sum(1 for j in mgr._jobs.values() if not j.status.is_terminal)
+        self.assertEqual(active_count, 4)
+
+        mgr.shutdown(wait=False)
+
+    def test_adv_executor_submit_failure_concurrent(self):
+        """Concurrent executor rejections: all fail cleanly, no orphaned QUEUED jobs, capacity restored."""
+        mgr = JobManager(max_workers=2, max_queued_jobs=5)
+
+        with patch.object(mgr._executor, "submit", side_effect=RuntimeError("thread pool saturated")):
+            rejected_errors = []
+
+            def worker_submit(idx):
+                wav = self._create_wav_file(duration_sec=2.0)
+                try:
+                    mgr.create_and_submit_job(f"worker_{idx}.wav", str(wav))
+                except RuntimeError as re:
+                    rejected_errors.append(re)
+
+            threads = [threading.Thread(target=worker_submit, args=(i,)) for i in range(5)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+            self.assertEqual(len(rejected_errors), 5)
+            # Active queue capacity must be 0 (restored)
+            active_count = sum(1 for j in mgr._jobs.values() if not j.status.is_terminal)
+            self.assertEqual(active_count, 0)
+            self.assertTrue(mgr.has_capacity())
+
+        mgr.shutdown(wait=False)
+
 
 if __name__ == "__main__":
     unittest.main()
