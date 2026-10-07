@@ -304,9 +304,9 @@ Retrieves the rhythm and Tala patterns available in the system.
 
 ## 6. GET `/api/v1/health`
 
-System health check and engine readiness probe.
+Lightweight process liveness probe. Fast and non-invasive.
 
-### Response (200 OK)
+### Response (200 OK — `HealthResponse`)
 ```json
 {
   "status": "healthy",
@@ -314,9 +314,129 @@ System health check and engine readiness probe.
   "services": {
     "api": "operational",
     "dsp_engine": "available",
-    "gemini_ai": "available",
-    "dataset_adapter": "ready"
+    "dataset_adapter": "ready",
+    "tala_engine": "available",
+    "raga_engine": "available"
   },
-  "timestamp": "2026-09-27T11:18:40Z"
+  "timestamp": "2026-10-07T12:00:00.000000+00:00"
 }
 ```
+
+---
+
+## 7. GET `/api/v1/ready`
+
+Readiness probe indicating whether the instance can accept new analysis work. Inspects job worker threads, executor state, and queue capacity.
+
+### Response (200 OK — Ready)
+```json
+{
+  "status": "ready",
+  "job_system": {
+    "worker_capacity": 4,
+    "queue_capacity": 50,
+    "active_jobs": 2,
+    "queue_available": 48
+  },
+  "timestamp": "2026-10-07T12:00:00.000000+00:00"
+}
+```
+
+### Response (200 OK — Degraded when Queue Saturated)
+When the queue is full (`queue_available == 0`), the probe returns `200 OK` with status `degraded`. The process is healthy and serves read queries, but new analysis submissions will receive `429 Too Many Requests`.
+
+### Response (503 Service Unavailable — Not Ready)
+Returned when the application is shutting down or the worker executor is unavailable.
+```json
+{
+  "status": "shutting_down",
+  "job_system": {
+    "is_shutdown": true
+  },
+  "timestamp": "2026-10-07T12:00:00.000000+00:00"
+}
+```
+
+---
+
+## 8. GET `/api/v1/metrics`
+
+Returns a bounded, thread-safe JSON snapshot of process-local runtime telemetry. Contains request counters, job lifecycle statistics, worker gauges, and stage durations.
+
+### Response (200 OK)
+```json
+{
+  "requests": {
+    "total": 128,
+    "failed": 2,
+    "latency_ms": {
+      "count": 128,
+      "total_ms": 2560.4,
+      "avg_ms": 20.0,
+      "min_ms": 1.2,
+      "max_ms": 145.8
+    }
+  },
+  "jobs": {
+    "created_total": 45,
+    "completed_total": 42,
+    "failed_total": 2,
+    "cancelled_total": 1,
+    "queued_current": 0,
+    "processing_current": 0,
+    "active_total": 0,
+    "analysis_duration_ms": {
+      "count": 42,
+      "total_ms": 42000.0,
+      "avg_ms": 1000.0,
+      "min_ms": 450.0,
+      "max_ms": 2100.0
+    }
+  },
+  "workers": {
+    "capacity": 4,
+    "active": 0
+  },
+  "queue": {
+    "capacity": 50,
+    "available": 50
+  },
+  "stages": {
+    "preprocessing": { "count": 42, "total_ms": 420.0, "avg_ms": 10.0, "min_ms": 3.0, "max_ms": 25.0 },
+    "tonic_estimation": { "count": 42, "total_ms": 2100.0, "avg_ms": 50.0, "min_ms": 20.0, "max_ms": 120.0 }
+  },
+  "failures": {
+    "INVALID_AUDIO_FORMAT": 2
+  }
+}
+```
+
+---
+
+## 9. Observability Headers & Request Correlation
+
+### `X-Request-ID`
+Every API response returns the `X-Request-ID` header.
+- If the client supplies `X-Request-ID`, it is validated and sanitized (alphanumeric, hyphen, underscore; max 64 characters).
+- If absent, invalid, or malicious (newlines, control characters, oversized), the server generates a fresh UUID4.
+- Correlated with asynchronous jobs: `POST /api/v1/analyze` records `request_id` in the `JobRecord` and lifecycle logs.
+
+### `X-Response-Time-Ms`
+Every API response returns elapsed wall-clock processing time in milliseconds.
+
+---
+
+## 10. Error Taxonomy
+
+Standardized machine-readable error codes:
+- `INVALID_REQUEST`: Malformed request payload or parameters.
+- `INVALID_AUDIO_FORMAT`: Unsupported audio format or corrupted header magic bytes.
+- `EMPTY_FILE`: Zero-byte uploaded audio payload.
+- `FILE_SIZE_EXCEEDED`: Upload exceeds the 25 MB limit.
+- `DURATION_EXCEEDED`: Audio duration exceeds the 10-minute (600s) maximum.
+- `JOB_QUEUE_FULL`: Worker pool queue capacity reached (50 active jobs).
+- `JOB_NOT_FOUND`: Specified job UUID does not exist or has expired.
+- `JOB_CANCELLED`: Job was cooperatively cancelled.
+- `SUBMISSION_FAILED`: Job could not be scheduled on the worker executor.
+- `PROCESSING_ERROR`: DSP audio feature extraction failure (sanitized error message).
+- `INTERNAL_SERVER_ERROR`: Unhandled internal server error.

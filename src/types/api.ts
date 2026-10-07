@@ -15,6 +15,7 @@ export interface ApiErrorDetail {
   status_code: number;
   details?: Record<string, unknown> | null;
   timestamp: string;
+  request_id?: string | null;
 }
 
 export interface NotImplementedResponse {
@@ -229,6 +230,8 @@ export interface AnalysisJobResponse {
   completed_at?: string | null;
   result?: AnalysisResponse | null;
   error?: JobErrorDetail | null;
+  request_id?: string | null;
+  stage_timings?: Record<string, number> | null;
 }
 
 export interface AnalysisJobCancelResponse {

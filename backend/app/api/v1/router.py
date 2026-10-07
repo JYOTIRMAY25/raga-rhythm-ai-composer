@@ -11,6 +11,7 @@ from backend.app.api.v1.endpoints import (
     explain,
     generate,
     health,
+    metrics,
     ragas,
     talas,
 )
@@ -18,6 +19,7 @@ from backend.app.api.v1.endpoints import (
 api_v1_router = APIRouter()
 
 api_v1_router.include_router(health.router)
+api_v1_router.include_router(metrics.router)
 api_v1_router.include_router(ragas.router)
 api_v1_router.include_router(talas.router)
 api_v1_router.include_router(analyze.router)

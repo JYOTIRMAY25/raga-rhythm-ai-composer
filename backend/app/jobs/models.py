@@ -47,6 +47,8 @@ class AnalysisJobStatusResponse(BaseModel):
     completed_at: Optional[str] = Field(default=None, description="ISO 8601 UTC completion or termination timestamp")
     result: Optional[AnalysisResponse] = Field(default=None, description="Analysis result payload when COMPLETED")
     error: Optional[JobError] = Field(default=None, description="Error details when FAILED")
+    request_id: Optional[str] = Field(default=None, description="Request correlation identifier")
+    stage_timings: Optional[Dict[str, float]] = Field(default=None, description="Recorded DSP stage durations in ms")
 
 
 class AnalysisJobCancelResponse(BaseModel):
@@ -68,10 +70,12 @@ class JobRecord:
         job_id: str,
         original_filename: str,
         file_path: Optional[str] = None,
+        request_id: Optional[str] = None,
     ) -> None:
         self.job_id = job_id
         self.original_filename = original_filename
         self.file_path = file_path
+        self.request_id = request_id
         self.status = JobStatus.QUEUED
         self.progress: int = 0
         self.current_stage: str = "Initialization"
@@ -81,6 +85,7 @@ class JobRecord:
         self.result: Optional[AnalysisResponse] = None
         self.error: Optional[JobError] = None
         self.cancel_requested: bool = False
+        self.stage_timings: Dict[str, float] = {}
 
     def to_status_response(self) -> AnalysisJobStatusResponse:
         """Serializes current job state into external Pydantic response schema."""
@@ -101,4 +106,6 @@ class JobRecord:
             completed_at=self.completed_at.isoformat() if self.completed_at else None,
             result=self.result,
             error=self.error,
+            request_id=self.request_id,
+            stage_timings=self.stage_timings or None,
         )

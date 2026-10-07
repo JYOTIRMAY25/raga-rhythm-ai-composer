@@ -24,17 +24,20 @@ export class ApiError extends Error {
   public statusCode: number;
   public errorCode: string;
   public details?: Record<string, unknown> | null;
+  public requestId?: string | null;
 
-  constructor(errorDetail: ApiErrorDetail) {
+  constructor(errorDetail: ApiErrorDetail, requestId?: string | null) {
     super(errorDetail.message);
     this.name = "ApiError";
     this.statusCode = errorDetail.status_code;
     this.errorCode = errorDetail.error_code;
     this.details = errorDetail.details;
+    this.requestId = requestId || errorDetail.request_id || null;
   }
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
+  const headerRequestId = response.headers?.get ? response.headers.get("X-Request-ID") : null;
   if (!response.ok) {
     let errorDetail: ApiErrorDetail;
     try {
@@ -45,6 +48,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
         status_code: response.status,
         details: data.details || null,
         timestamp: data.timestamp || new Date().toISOString(),
+        request_id: data.request_id || headerRequestId || null,
       };
     } catch {
       errorDetail = {
@@ -53,9 +57,10 @@ async function handleResponse<T>(response: Response): Promise<T> {
         status_code: response.status,
         details: null,
         timestamp: new Date().toISOString(),
+        request_id: headerRequestId || null,
       };
     }
-    throw new ApiError(errorDetail);
+    throw new ApiError(errorDetail, headerRequestId);
   }
   return response.json() as Promise<T>;
 }

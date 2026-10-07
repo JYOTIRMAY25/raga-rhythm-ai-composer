@@ -750,6 +750,7 @@ class AnalysisPipeline:
 
         self._check_cancellation(cancellation_check)
         self._report_progress(progress_callback, 98, "Finalization")
+        t0 = time.perf_counter()
 
         # Tala Candidates
         tala_cands_payload: List[PipelineTalaCandidate] = []
@@ -820,6 +821,7 @@ class AnalysisPipeline:
             cycle_length=beat_grid.cycle_length,
         )
 
+        stage_timings["finalization"] = round((time.perf_counter() - t0) * 1000.0, 2)
         total_time_ms = round((time.perf_counter() - start_total) * 1000.0, 2)
 
         return UnifiedAnalysisResult(

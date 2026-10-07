@@ -132,3 +132,15 @@ When moving to horizontally scalable multi-server production infrastructure:
 3. Store temporary audio payloads in S3-compatible object storage (e.g., AWS S3, MinIO).
 4. Worker processes run independently in containerized pods with auto-scaling based on queue depth.
 5. The API contract (`POST /analyze`, `GET /analysis/{job_id}`, `POST /analysis/{job_id}/cancel`) and frontend polling hooks remain identical.
+
+---
+
+## 8. Observability & Stage Timing Integration (Phase 5.3)
+
+Each job record is integrated with the in-process observability subsystem:
+- **`request_id` Correlation**: Preserves the originating `X-Request-ID` from submission for end-to-end log tracing.
+- **High-Resolution Monotonic Stage Timing**: Each DSP stage is instrumented with `time.perf_counter()` and recorded in `stage_timings`.
+- **Structured Lifecycle Events**: Worker state transitions emit structured logging events (`analysis.job.created`, `analysis.job.started`, `analysis.job.stage_completed`, etc.) and increment in-process metrics.
+- See [`docs/OBSERVABILITY.md`](file:///d:/raga-rhythm-ai-composer-main/docs/OBSERVABILITY.md) for full details on metrics, log formatting, and health probes.
+
+

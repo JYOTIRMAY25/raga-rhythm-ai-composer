@@ -124,26 +124,32 @@ class NotImplementedAPIError(APIError):
 
 async def api_error_handler(request: Request, exc: APIError) -> JSONResponse:
     """Standard handler for APIError instances."""
+    req_id = getattr(request.state, "request_id", None)
     payload = ErrorDetailResponse(
         error_code=exc.error_code,
         message=exc.message,
         status_code=exc.status_code,
         details=exc.details or None,
     )
+    headers = {"X-Request-ID": req_id} if req_id else {}
     return JSONResponse(
         status_code=exc.status_code,
         content=payload.model_dump(),
+        headers=headers,
     )
 
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Fallback handler for unhandled internal exceptions to sanitize error messages."""
+    req_id = getattr(request.state, "request_id", None)
     payload = ErrorDetailResponse(
         error_code="INTERNAL_SERVER_ERROR",
         message="An unexpected error occurred while processing the audio analysis.",
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
     )
+    headers = {"X-Request-ID": req_id} if req_id else {}
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=payload.model_dump(),
+        headers=headers,
     )

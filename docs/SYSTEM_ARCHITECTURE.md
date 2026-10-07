@@ -130,3 +130,15 @@ backend/
 5. **Malicious Audio & Resource Exhaustion Defense**: Audio duration bounded (maximum 10 minutes decoded); memory-mapped streaming reads to prevent buffer overflows or zip-bomb equivalents.
 6. **CORS Policy**: Configurable whitelist (`http://localhost:8080`, `http://localhost:5173`, production domains) with restricted HTTP methods (`GET`, `POST`, `OPTIONS`).
 7. **Safe Error Handling**: Never expose internal stack traces, system paths, or model weights in HTTP responses; standard RFC 7807 compliant error schemas.
+
+---
+
+## 5. Observability & Reliability Architecture (Phase 5.3)
+
+1. **Request Tracing & Correlation**: Inbound requests are traced with `X-Request-ID` sanitized via regex `^[A-Za-z0-9_-]{1,64}$`, bound to `ContextVar` task-local contexts, and echoed on all responses and error payloads.
+2. **Structured Logging**: Production-safe JSON logging with stable event names (`request.started`, `request.completed`, `analysis.job.started`, `analysis.job.stage_completed`, etc.) and automatic redaction of sensitive credentials and binary audio payloads.
+3. **Monotonic Stage Timing**: Each DSP pipeline stage is timed via high-resolution `time.perf_counter()` and exposed in job status `stage_timings`.
+4. **Lightweight In-Process Metrics**: Thread-safe in-process `MetricsRegistry` tracking request/job counters, dynamic queue gauges, and $O(1)$ latency statistics available at `GET /api/v1/metrics`.
+5. **Health & Readiness**: `GET /api/v1/health` provides fast liveness checks, and `GET /api/v1/ready` provides subsystem readiness checks (thread pool availability, queue depth).
+6. **Detailed Specification**: See [`docs/OBSERVABILITY.md`](file:///d:/raga-rhythm-ai-composer-main/docs/OBSERVABILITY.md).
+

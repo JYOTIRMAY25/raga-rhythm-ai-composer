@@ -31,6 +31,18 @@ class HealthResponse(BaseModel):
     )
 
 
+class ReadyResponse(BaseModel):
+    """System readiness check payload indicating capability to accept analysis tasks."""
+    model_config = ConfigDict(extra="forbid")
+
+    status: str = Field(..., description="Overall readiness state ('ready', 'degraded', 'not_ready')")
+    job_system: Dict[str, Any] = Field(default_factory=dict, description="Job worker and queue capacity state")
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(),
+        description="UTC timestamp of the readiness probe"
+    )
+
+
 class ErrorDetailResponse(BaseModel):
     """RFC-compliant structured error response."""
     model_config = ConfigDict(extra="forbid")

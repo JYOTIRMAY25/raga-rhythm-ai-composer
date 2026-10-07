@@ -56,6 +56,11 @@ from backend.app.schemas.analysis import (
     TalaResultSchema,
     TonicResultSchema,
 )
+from backend.app.observability import (
+    get_current_request_id,
+    log_event,
+    metrics_registry,
+)
 
 logger = logging.getLogger("ragarhythm.jobs")
 
@@ -257,6 +262,48 @@ class JobManager:
         )
         self._is_shutdown = False
 
+        # Register thread-safe gauge provider for in-process metrics
+        metrics_registry.set_gauge_provider(self._get_gauge_metrics)
+
+    def _get_gauge_metrics(self) -> Dict[str, Any]:
+        """Provides dynamic queue and worker gauges to metrics registry."""
+        with self._lock:
+            queued = sum(1 for j in self._jobs.values() if j.status == JobStatus.QUEUED)
+            processing = sum(1 for j in self._jobs.values() if j.status == JobStatus.PROCESSING)
+            active = queued + processing
+            return {
+                "queued_current": queued,
+                "processing_current": processing,
+                "active_total": active,
+                "worker_capacity": self._max_workers,
+                "workers_active": processing,
+                "queue_capacity": self._max_queued_jobs,
+                "queue_available": max(0, self._max_queued_jobs - active),
+                "is_shutdown": self._is_shutdown,
+            }
+
+    def is_ready(self) -> Tuple[bool, str, Dict[str, Any]]:
+        """
+        Inexpensive readiness probe verifying internal state:
+        - JobManager initialized and not shutting down
+        - ThreadPoolExecutor available
+        - Queue capacity state
+        """
+        with self._lock:
+            if self._is_shutdown:
+                return False, "shutting_down", {"is_shutdown": True}
+
+            active = sum(1 for j in self._jobs.values() if not j.status.is_terminal)
+            available = max(0, self._max_queued_jobs - active)
+            status_str = "ready" if available > 0 else "degraded"
+            details = {
+                "worker_capacity": self._max_workers,
+                "queue_capacity": self._max_queued_jobs,
+                "active_jobs": active,
+                "queue_available": available,
+            }
+            return True, status_str, details
+
     def has_capacity(self) -> bool:
         """
         Thread-safe check whether the queue can accept an additional job.
@@ -275,10 +322,11 @@ class JobManager:
         self,
         original_filename: str,
         file_path: Optional[str] = None,
+        request_id: Optional[str] = None,
     ) -> JobRecord:
         """
         Creates and registers a new job in QUEUED state.
-        Enforces queue bounding and retention eviction.
+        Enforces queue bounding, retention eviction, and request correlation.
         """
         with self._lock:
             if self._is_shutdown:
@@ -300,13 +348,32 @@ class JobManager:
             if len(self._jobs) >= self._max_retained_jobs:
                 self._evict_oldest_terminal_job_locked()
 
+            effective_request_id = request_id or get_current_request_id()
             job_id = str(uuid.uuid4())
             record = JobRecord(
                 job_id=job_id,
                 original_filename=original_filename,
                 file_path=file_path,
+                request_id=effective_request_id,
             )
             self._jobs[job_id] = record
+
+            # Log lifecycle event and record metric
+            try:
+                log_event(
+                    "analysis.job.created",
+                    job_id=job_id,
+                    request_id=effective_request_id,
+                    status=JobStatus.QUEUED.value,
+                )
+            except Exception:
+                pass
+
+            try:
+                metrics_registry.record_job_created()
+            except Exception:
+                pass
+
             return record
 
     def submit_job(self, job_id: str) -> JobRecord:
@@ -323,6 +390,13 @@ class JobManager:
             if record.status != JobStatus.QUEUED:
                 return record
 
+            log_event(
+                "analysis.job.queued",
+                job_id=job_id,
+                request_id=record.request_id,
+                status=JobStatus.QUEUED.value,
+            )
+
             try:
                 self._executor.submit(self._worker_execute, job_id)
             except Exception as exc:
@@ -335,6 +409,14 @@ class JobManager:
                     message="Failed to schedule audio analysis job on worker pool.",
                 )
                 self._cleanup_temp_file(record.file_path)
+                metrics_registry.record_job_failed("SUBMISSION_FAILED")
+                log_event(
+                    "analysis.job.submission_failed",
+                    level=logging.ERROR,
+                    job_id=job_id,
+                    request_id=record.request_id,
+                    error_code="SUBMISSION_FAILED",
+                )
                 raise
             return record
 
@@ -342,6 +424,7 @@ class JobManager:
         self,
         original_filename: str,
         file_path: Optional[str] = None,
+        request_id: Optional[str] = None,
     ) -> JobRecord:
         """
         Atomically creates a job and submits it to the worker executor under lock.
@@ -352,8 +435,15 @@ class JobManager:
             record = self.create_job(
                 original_filename=original_filename,
                 file_path=file_path,
+                request_id=request_id,
             )
             try:
+                log_event(
+                    "analysis.job.queued",
+                    job_id=record.job_id,
+                    request_id=record.request_id,
+                    status=JobStatus.QUEUED.value,
+                )
                 self._executor.submit(self._worker_execute, record.job_id)
             except Exception as exc:
                 logger.error(f"Executor submission failed for job {record.job_id}: {exc}")
@@ -365,6 +455,14 @@ class JobManager:
                     message="Failed to schedule audio analysis job on worker pool.",
                 )
                 self._cleanup_temp_file(record.file_path)
+                metrics_registry.record_job_failed("SUBMISSION_FAILED")
+                log_event(
+                    "analysis.job.submission_failed",
+                    level=logging.ERROR,
+                    job_id=record.job_id,
+                    request_id=record.request_id,
+                    error_code="SUBMISSION_FAILED",
+                )
                 raise
             return record
 
@@ -396,11 +494,26 @@ class JobManager:
             if not record:
                 raise JobNotFoundError(f"Job {job_id} not found.")
 
+            log_event(
+                "analysis.job.cancel_requested",
+                job_id=job_id,
+                request_id=record.request_id,
+                current_status=record.status.value,
+            )
+
             if record.status == JobStatus.QUEUED:
                 record.status = JobStatus.CANCELLED
                 record.current_stage = "Cancelled"
                 record.completed_at = datetime.now(timezone.utc)
                 self._cleanup_temp_file(record.file_path)
+                metrics_registry.record_job_cancelled()
+                log_event(
+                    "analysis.job.cancelled",
+                    job_id=job_id,
+                    request_id=record.request_id,
+                    status=JobStatus.CANCELLED.value,
+                    stage="Cancelled",
+                )
                 return JobStatus.CANCELLED, "Job was cancelled before execution started."
 
             if record.status == JobStatus.PROCESSING:
@@ -440,6 +553,19 @@ class JobManager:
             record.result = result
             self._cleanup_temp_file(record.file_path)
 
+            duration_ms = 0.0
+            if record.started_at and record.completed_at:
+                duration_ms = round((record.completed_at - record.started_at).total_seconds() * 1000.0, 2)
+
+            metrics_registry.record_job_completed(duration_ms)
+            log_event(
+                "analysis.job.completed",
+                job_id=job_id,
+                request_id=record.request_id,
+                duration_ms=duration_ms,
+                status=JobStatus.COMPLETED.value,
+            )
+
     def fail_job(
         self,
         job_id: str,
@@ -461,6 +587,21 @@ class JobManager:
             record.error = JobError(code=code, message=message)
             self._cleanup_temp_file(record.file_path)
 
+            duration_ms = 0.0
+            if record.started_at and record.completed_at:
+                duration_ms = round((record.completed_at - record.started_at).total_seconds() * 1000.0, 2)
+
+            metrics_registry.record_job_failed(code)
+            log_event(
+                "analysis.job.failed",
+                level=logging.ERROR,
+                job_id=job_id,
+                request_id=record.request_id,
+                error_code=code,
+                duration_ms=duration_ms,
+                status=JobStatus.FAILED.value,
+            )
+
     def _worker_execute(self, job_id: str) -> None:
         """
         Background worker thread executing unified DSP pipeline for a job.
@@ -476,6 +617,14 @@ class JobManager:
                 record.current_stage = "Cancelled"
                 record.completed_at = datetime.now(timezone.utc)
                 self._cleanup_temp_file(record.file_path)
+                metrics_registry.record_job_cancelled()
+                log_event(
+                    "analysis.job.cancelled",
+                    job_id=job_id,
+                    request_id=record.request_id,
+                    status=JobStatus.CANCELLED.value,
+                    stage="Cancelled",
+                )
                 return
 
             record.status = JobStatus.PROCESSING
@@ -484,6 +633,14 @@ class JobManager:
             record.progress = 5
             file_path = record.file_path
             original_filename = record.original_filename
+            req_id = record.request_id
+
+        log_event(
+            "analysis.job.started",
+            job_id=job_id,
+            request_id=req_id,
+            status=JobStatus.PROCESSING.value,
+        )
 
         if not file_path or not os.path.exists(file_path):
             self.fail_job(
@@ -495,6 +652,13 @@ class JobManager:
 
         def progress_cb(prog: int, stage_name: str) -> None:
             self.update_progress(job_id, prog, stage_name)
+            log_event(
+                "analysis.job.stage_started",
+                job_id=job_id,
+                request_id=req_id,
+                stage=stage_name,
+                progress=prog,
+            )
 
         def cancellation_chk() -> bool:
             with self._lock:
@@ -512,6 +676,22 @@ class JobManager:
                 progress_callback=progress_cb,
                 cancellation_check=cancellation_chk,
             )
+
+            # Record stage timings into record and metrics registry
+            with self._lock:
+                rec = self._jobs.get(job_id)
+                if rec:
+                    rec.stage_timings = dict(dsp_result.stage_timings_ms)
+
+            for stage_name, stage_dur in dsp_result.stage_timings_ms.items():
+                metrics_registry.record_stage_duration(stage_name, stage_dur)
+                log_event(
+                    "analysis.job.stage_completed",
+                    job_id=job_id,
+                    request_id=req_id,
+                    stage=stage_name,
+                    duration_ms=stage_dur,
+                )
 
             # Check if cancellation was observed right before finalizing
             if cancellation_chk():
@@ -534,6 +714,14 @@ class JobManager:
                     rec.current_stage = "Cancelled"
                     rec.completed_at = datetime.now(timezone.utc)
                     self._cleanup_temp_file(rec.file_path)
+            metrics_registry.record_job_cancelled()
+            log_event(
+                "analysis.job.cancelled",
+                job_id=job_id,
+                request_id=req_id,
+                status=JobStatus.CANCELLED.value,
+                stage="Cancelled",
+            )
 
         except AudioTooLongError as e:
             self.fail_job(

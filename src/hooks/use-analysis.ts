@@ -146,6 +146,7 @@ export function useAnalysis() {
             status_code: 500,
             details: null,
             timestamp: new Date().toISOString(),
+            request_id: jobStatus.request_id || null,
           });
 
           toast({
@@ -184,6 +185,7 @@ export function useAnalysis() {
             status_code: err.statusCode,
             details: err.details,
             timestamp: new Date().toISOString(),
+            request_id: err.requestId || null,
           };
         } else if (err instanceof Error) {
           userFriendlyMessage = err.message;
@@ -256,6 +258,7 @@ export function useAnalysis() {
           status_code: err.statusCode,
           details: err.details,
           timestamp: new Date().toISOString(),
+          request_id: err.requestId || null,
         };
       } else if (err instanceof Error) {
         userFriendlyMessage = err.message;

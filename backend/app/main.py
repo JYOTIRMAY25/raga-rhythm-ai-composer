@@ -22,8 +22,15 @@ from backend.app.core.exceptions import (
     generic_exception_handler,
 )
 from backend.app.jobs import job_manager
+from backend.app.observability import (
+    log_event,
+    metrics_registry,
+    reset_current_request_id,
+    sanitize_request_id,
+    set_current_request_id,
+)
 
-# Configure Structured Logger
+# Configure Root Logger
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
@@ -52,33 +59,71 @@ app = FastAPI(
 # Request ID & Observability Middleware
 @app.middleware("http")
 async def observability_and_request_id_middleware(request: Request, call_next):
-    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    raw_req_id = request.headers.get("X-Request-ID")
+    request_id = sanitize_request_id(raw_req_id)
+    token = set_current_request_id(request_id)
+    request.state.request_id = request_id
     start_time = time.perf_counter()
 
-    # Attach request_id to request state
-    request.state.request_id = request_id
+    try:
+        log_event(
+            "request.started",
+            request_id=request_id,
+            method=request.method,
+            route=request.url.path,
+        )
+    except Exception:
+        pass
 
     try:
         response = await call_next(request)
+        duration_ms = max(0.0, (time.perf_counter() - start_time) * 1000.0)
+        response.headers["X-Request-ID"] = request_id
+        response.headers["X-Response-Time-Ms"] = f"{duration_ms:.2f}"
+
+        is_error = response.status_code >= 400
+        try:
+            metrics_registry.record_request(duration_ms, is_error=is_error)
+        except Exception:
+            pass
+
+        try:
+            event_name = "request.failed" if is_error else "request.completed"
+            log_level = logging.WARNING if is_error else logging.INFO
+            log_event(
+                event_name,
+                level=log_level,
+                request_id=request_id,
+                method=request.method,
+                route=request.url.path,
+                status_code=response.status_code,
+                duration_ms=round(duration_ms, 2),
+            )
+        except Exception:
+            pass
+        return response
     except Exception as exc:
-        duration_ms = (time.perf_counter() - start_time) * 1000.0
-        logger.error(
-            f"request_id={request_id} method={request.method} path={request.url.path} "
-            f"status=500 duration_ms={duration_ms:.2f} error={type(exc).__name__}"
-        )
+        duration_ms = max(0.0, (time.perf_counter() - start_time) * 1000.0)
+        try:
+            metrics_registry.record_request(duration_ms, is_error=True)
+        except Exception:
+            pass
+        try:
+            log_event(
+                "request.failed",
+                level=logging.ERROR,
+                request_id=request_id,
+                method=request.method,
+                route=request.url.path,
+                status_code=500,
+                duration_ms=round(duration_ms, 2),
+                error_code=type(exc).__name__,
+            )
+        except Exception:
+            pass
         raise exc
-
-    duration_ms = (time.perf_counter() - start_time) * 1000.0
-    response.headers["X-Request-ID"] = request_id
-    response.headers["X-Response-Time-Ms"] = f"{duration_ms:.2f}"
-
-    # Log clean, safe structured line (no secrets, no bodies)
-    logger.info(
-        f"request_id={request_id} method={request.method} path={request.url.path} "
-        f"status={response.status_code} duration_ms={duration_ms:.2f}"
-    )
-
-    return response
+    finally:
+        reset_current_request_id(token)
 
 
 # Configure CORS Middleware

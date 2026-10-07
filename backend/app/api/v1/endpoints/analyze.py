@@ -4,7 +4,7 @@ Audio analysis endpoints executing the asynchronous DSP job pipeline.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, File, UploadFile, status
+from fastapi import APIRouter, File, Request, UploadFile, status
 
 from backend.app.core.exceptions import (
     AudioDurationExceededError,
@@ -30,23 +30,26 @@ router = APIRouter(tags=["Analysis"])
     description="Uploads and enqueues an Indian classical music audio recording for asynchronous background analysis, returning a trackable job ID immediately.",
 )
 async def analyze_audio(
+    request: Request,
     file: UploadFile = File(..., description="Audio file in MP3, WAV, FLAC, OGG, or M4A format (max 25 MB)"),
 ) -> AnalysisJobStatusResponse:
     """
     Validates the uploaded audio file and enqueues an asynchronous analysis job.
     Returns 202 Accepted with job metadata and initial QUEUED/PROCESSING state.
     """
-    # Medium 2: Fast pre-check to reject uploads immediately when queue is saturated, avoiding wasted disk I/O
+    # Fast pre-check to reject uploads immediately when queue is saturated, avoiding wasted disk I/O
     if not job_manager.has_capacity():
         raise JobQueueFullError("Analysis queue is full. Please retry shortly.")
 
+    req_id = getattr(request.state, "request_id", None)
     temp_path, original_filename, _ = await save_upload_to_storage(file)
 
     try:
-        # Medium 3: Atomic creation and submission under lock prevents orphaned QUEUED jobs
+        # Atomic creation and submission under lock prevents orphaned QUEUED jobs
         record = job_manager.create_and_submit_job(
             original_filename=original_filename,
             file_path=str(temp_path),
+            request_id=req_id,
         )
         return record.to_status_response()
     except Exception:

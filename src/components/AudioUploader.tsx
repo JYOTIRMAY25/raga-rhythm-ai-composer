@@ -13,6 +13,7 @@ interface AudioUploaderProps {
   errorMessage?: string | null;
   progress?: number;
   currentStage?: string;
+  referenceId?: string | null;
   onCancel?: () => void;
   onReset?: () => void;
 }
@@ -25,6 +26,7 @@ const AudioUploader: React.FC<AudioUploaderProps> = ({
   errorMessage = null,
   progress = 0,
   currentStage = "Processing",
+  referenceId = null,
   onCancel,
   onReset,
 }) => {
@@ -156,7 +158,12 @@ const AudioUploader: React.FC<AudioUploaderProps> = ({
         <Alert variant="destructive" className="mt-4">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Analysis Error</AlertTitle>
-          <AlertDescription className="text-sm mt-1">{errorMessage}</AlertDescription>
+          <AlertDescription className="text-sm mt-1">
+            <p>{errorMessage}</p>
+            {referenceId && (
+              <p className="text-xs text-muted-foreground mt-1 font-mono">Reference: {referenceId}</p>
+            )}
+          </AlertDescription>
         </Alert>
       )}
 
