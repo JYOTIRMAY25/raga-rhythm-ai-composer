@@ -1,0 +1,84 @@
+name: CI Verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-verification:
+    name: Backend Test Suite & Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Backend Pytest Suite
+        run: |
+          python -m pytest -q
+
+      - name: Run Composition Validation Matrix (630 combinations)
+        run: |
+          python scripts/validate_compositions.py
+
+  frontend-verification:
+    name: Frontend Tests, Types, Lint & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Frontend Tests (Vitest)
+        run: npm test -- --run
+
+      - name: TypeScript Check
+        run: npx tsc --noEmit
+
+      - name: ESLint Check
+        run: npm run lint
+
+      - name: Production Bundle Build
+        run: npm run build
+
+  security-audit:
+    name: Security & Secret Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Scan for unignored environment secrets
+        run: |
+          if [ -f .env ] && [ ! -L .env ]; then
+            echo "ERROR: Found committed .env file!"
+            exit 1
+          fi
+          echo "No committed .env files found."
+
+      - name: Verify .dockerignore exclusions
+        run: |
+          grep -q "saraga" .dockerignore || { echo "saraga not excluded in .dockerignore"; exit 1; }
+          grep -q "\.env" .dockerignore || { echo ".env not excluded in .dockerignore"; exit 1; }
+          grep -q "\*\.wav" .dockerignore || { echo "*.wav not excluded in .dockerignore"; exit 1; }
+          echo ".dockerignore verification passed."

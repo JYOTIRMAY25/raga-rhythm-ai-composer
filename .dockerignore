@@ -1,35 +1,60 @@
-# Git & IDE
+# Git & Repository metadata
 .git
 .gitignore
+.gitattributes
+.github
 .gemini
 .vscode
 .idea
 
 # Node & Frontend Build
-node_modules
-dist
-.pytest_cache
+node_modules/
+dist/
+dist-ssr/
+build/
+.npm
+package-lock.json.backup
+
+# Testing & Quality Assurance
+.pytest_cache/
 .coverage
-htmlcov
+.coverage.*
+coverage/
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+test-results/
 
-# Python caches & virtualenvs
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-.venv
-venv
-env
+# Python caches, compiled binaries & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+ENV/
 
-# Artifacts & Datasets
-artifacts/
-scratch/
-saraga1.5_hindustani/
+# Datasets, Models & Large Audio Media
+saraga*
 data/
+data/audio/
+data/datasets/
+data/models/
 *.wav
 *.mp3
+*.flac
+*.ogg
+*.m4a
+*.aiff
+*.aac
 
-# Local Environment
-.env
-.env.local
+# Artifacts & Scratch
+artifacts/
+scratch/
 *.log
+
+# Local Environment Variables & Secrets
+.env
+.env.*
+!.env.example

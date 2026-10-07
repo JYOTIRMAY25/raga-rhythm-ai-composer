@@ -1,0 +1,47 @@
+# ==============================================================================
+# Production Dockerfile for RagaRhythm AI Frontend
+# Multi-stage static compilation with Nginx unprivileged serving
+# ==============================================================================
+
+# Build Stage: Compile TypeScript and Vite assets
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy dependency descriptors
+COPY package*.json ./
+
+# Deterministic install of production & dev build dependencies
+RUN npm ci
+
+# Copy frontend source code and configurations
+COPY . .
+
+# Vite environment variables are compile-time baked
+# Default connects to relative /api/v1 (reverse-proxy setup) or can be passed via --build-arg
+ARG VITE_API_BASE_URL=""
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+# Build production bundle
+RUN npm run build
+
+# ==============================================================================
+# Production Static Serving Stage
+# ==============================================================================
+FROM nginx:alpine AS runtime
+
+# Remove default nginx website
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy built static artifacts
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy custom Nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+    CMD wget -qO- http://localhost:8080/healthz || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

@@ -32,7 +32,7 @@ from backend.app.observability import (
 
 # Configure Root Logger
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, settings.log_level, logging.INFO),
     format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
 )
 logger = logging.getLogger("ragarhythm")
